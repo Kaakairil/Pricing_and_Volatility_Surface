@@ -1,17 +1,23 @@
----
-description: Task 3 — CRR binomial tree
----
+# Task 03: CRR Binomial Tree
 
-# Task 3: CRR Binomial (FR-3)
+**Source:** Master Plan Part E Task 03 | Implements: FR-3
 
 ## Files
-- `src/volsurf/binomial.py`, `tests/test_binomial_convergence.py`
+- Create: `src/volsurf/binomial.py`, `tests/test_binomial_convergence.py`, `docs/binomial_method.md`
 
 ## Interfaces
-- `binomial_price(S, K, T, sigma, r, q, option, steps, american=True) -> float`
-- Vectorized NumPy tree; `steps` default 1000.
+- `binomial_price(S, K, T, sigma, r, q, option, steps=1000, american=True) -> float`
 
 ## Steps
-- [ ] Write tests: European binomial (500 steps) matches `black_scholes` within 0.01 across PRD §9.1 grid; American ≥ European; American convergence — error at 1000 steps < 0.005 vs 10000-step ref; premium (Am–Eu) rises with rate for puts, ~0 for calls on q=0 stock.
-- [ ] Implement CRR: u=exp(sigma sqrt(dt)), d=1/u, p as risk-neutral prob. Backward induction with early-exercise max when american.
-- [ ] `pytest tests/` green; ruff; commit.
+1. **Tests first:**
+   - European tree, 500 steps, matches `black_scholes` within 0.01 across PRD §9.1 grid.
+   - American ≥ European (tol 1e-10).
+   - Convergence: 1000-step American vs 10000-step reference, abs error < 0.005. CRR oscillates with step count — also test average of consecutive counts (999, 1000) shows small oscillation.
+   - Call early-exercise premium with q = 0 < 1e-6; put premium nondecreasing in r.
+2. **Implement CRR:** dt = T/N, u = e^{σ√dt}, d = 1/u, p = (e^{(r−q)dt} − d)/(u − d).
+3. **Validity check:** raise `ValueError` if d < e^{(r−q)dt} < u fails (short expiries, low vol). Test the boundary.
+4. Vectorized backward induction (NumPy); American takes max(continuation, intrinsic) per node.
+5. Benchmark: 1000 steps for one price < 10 ms; record number.
+
+## Exit criteria
+Tests green; runtime recorded.
