@@ -1,16 +1,22 @@
----
-description: Task 4 — Monte Carlo pricer
----
+# Task 04: Monte Carlo Pricer
 
-# Task 4: Monte Carlo (FR-4)
+**Source:** Master Plan Part E Task 04 | Implements: FR-4
 
 ## Files
-- `src/volsurf/montecarlo.py`, `tests/test_montecarlo.py`
+- Create: `src/volsurf/montecarlo.py`, `tests/test_montecarlo.py`
 
 ## Interfaces
-- `monte_carlo_price(S, K, T, sigma, r, q, option, paths=200000, seed=0, antithetic=True, control=True) -> (price, standard_error)`
+- `monte_carlo_price(S, K, T, sigma, r, q, option, paths=200_000, seed=0, antithetic=True, control=True) -> (price, standard_error)`
 
 ## Steps
-- [ ] Write tests: BS price within 3 SE of MC for a few grid points; across ≥10 seeds the estimator variance echoes the reported SE; control variate reduces SE vs raw (assert SE_control < SE_raw).
-- [ ] Implement GBM paths: S_T = S exp((r-q-sigma^2/2)T + sigma sqrt(T) Z). Antithetic: pair Z and -Z. Control variate: closed-form BS as control.
-- [ ] `pytest tests/` green; ruff; commit.
+1. **Tests first:**
+   - Black-Scholes price within 3 SE of MC at four grid points.
+   - Over 10 seeds, spread of estimates consistent with reported SE (ratio 0.7–1.3).
+   - Control variate reduces SE vs raw estimator (assert SE_control < SE_raw).
+2. **Implement GBM terminal:** S_T = S exp((r − q − σ²/2) T + σ √T Z), Z ~ N(0,1).
+3. **Antithetic:** pair Z and −Z; SE over pair averages (pairs = independent units).
+4. **Control variate (master plan B.4):** X = e^{−rT} S_T with E[X] = S e^{−qT}; Y = e^{−rT} payoff; β = Cov(Y,X)/Var(X) on same paths; adjusted estimator Ȳ − β(X̄ − S e^{−qT}). Document control choice in docstring.
+5. Return SE of final estimator.
+
+## Exit criteria
+Tests green.
