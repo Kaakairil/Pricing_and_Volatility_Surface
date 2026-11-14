@@ -1,21 +1,23 @@
----
-description: Task 2 — Black-Scholes-Merton price + Greeks
----
+# Task 02: Black-Scholes-Merton Price and Greeks
 
-# Task 2: Black-Scholes-Merton (FR-1, FR-2)
+**Source:** Master Plan Part E Task 02 | Implements: FR-1, FR-2
 
 ## Files
-- `src/volsurf/bsm.py`
-- `tests/test_bsm.py`, `tests/test_greeks_finite_difference.py`
+- Create: `src/volsurf/bsm.py`, `tests/test_bsm.py`, `tests/test_greeks_finite_difference.py`, `docs/bsm_derivation.md`
 
 ## Interfaces
-- `black_scholes(S, K, T, sigma, r, q, option='call') -> float`
-- `delta(S,K,T,sigma,r,q,option)`, same for `gamma/vega/theta/rho`
-- Inputs validated: S>0, K>0, T>0, sigma>=0. Raise `ValueError` otherwise.
+- `black_scholes(S, K, T, sigma, r, q, option) -> float`
+- `delta`, `gamma`, `vega`, `theta`, `rho` — same signature. Theta per year (per-day convention in docstring only).
 
 ## Steps
-- [ ] Write tests: known textbook call/put values (cite source), put-call parity to 1e-10, price monotonicity in K/sigma/T.
-- [ ] Implement `black_scholes` via scipy.stats.norm cdf, exact formulas.
-- [ ] Implement 5 analytical Greeks.
-- [ ] Write FD test: each Greek vs central finite diff, rel err < 1e-4 over grid (S in {90,100,110}, K moneyness {0.8,1.0,1.2}, T {0.02,0.08,0.25,1}, sigma {0.1,0.2,0.4}, r=0.05, q=0.02).
-- [ ] `pytest tests/` green; ruff clean; commit.
+1. **Tests first:**
+   - Two textbook benchmark values with citation in test docstring.
+   - Put-call parity European: |C − P − (S e^{−qT} − K e^{−rT})| < 1e-10.
+   - Monotonicity: call ↓ in K, ↑ in sigma and T (no dividends case).
+2. Implement `black_scholes` via `scipy.stats.norm` exact formulas.
+3. Edge cases: T = 0 or sigma = 0 → return discounted intrinsic value (no division by zero). Test both.
+4. Five analytical Greeks; FD verification: central differences over S ∈ {90,100,110}, moneyness K/S ∈ {0.8,1.0,1.2}, T ∈ {0.02,0.08,0.25,1.0}, σ ∈ {0.1,0.2,0.4}, r = 0.05, q = 0.02. Relative error < 1e-4 (absolute floor 1e-8 near zero).
+5. `docs/bsm_derivation.md`: derivation from risk-neutral pricing formula, d1/d2 definitions.
+
+## Exit criteria
+Tests green; coverage of `bsm.py` ≥ 95%; ruff clean.
