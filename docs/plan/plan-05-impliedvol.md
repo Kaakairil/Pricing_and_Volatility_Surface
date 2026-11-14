@@ -1,16 +1,30 @@
----
-description: Task 5 — implied volatility inversion
----
+# Task 05: Implied Volatility (American-aware)
 
-# Task 5: Implied Volatility (FR-5)
+**Source:** Master Plan Part E Task 05 (Review B.1) | Implements: FR-5
+
+## Key correction (B.1)
+SPY options are American. Invert using the **binomial American price**, not Black-Scholes. Keep Black-Scholes IV as a comparison column to quantify the difference.
 
 ## Files
-- `src/volsurf/implied_vol.py`, `tests/test_implied_vol_roundtrip.py`
+- Create: `src/volsurf/implied_vol.py`, `tests/test_implied_vol_roundtrip.py`, `docs/implied_vol_method.md`
 
 ## Interfaces
-- `implied_volatility(S, K, T, market_price, r, q, option) -> (sigma, reason)` — returns `(nan, code)` for out-of-bounds; codes: `LOW-NA` (< intrinsic), `HIGH-NA` (> upper bound), `ok` else.
+- `implied_volatility(S, K, T, market_price, r, q, option, style="american", steps=500) -> (sigma, reason)`
+- `style`: `"american"` (default, SPY) or `"european"` (comparison / BS column).
+- Reason codes: `ok`, `LOW-NA` (below intrinsic bound), `HIGH-NA` (above upper bound), `NO-BRACKET`, `NO-CONV`.
+
+**Bounds (before solving):** lower = style intrinsic; upper = S e^{−qT} (calls), K (American puts), K e^{−rT} (European puts).
 
 ## Steps
-- [ ] Write tests: vol grid {0.05,0.1,0.2,0.4} × strikes (deep ITM/OTM included) round-trips to 1e-6; out-of-bounds prices return nan + correct code; near-expiry (T=0.008) case; late round-trips.
-- [ ] Implement: bracket [0, 5] with Brent (`scipy.optimize.brentq`, primary); Newton with vega (secondary) on interior bracket with confirmed convergence; explicit bounds before solving per §6.3.
-- [ ] `pytest tests/` green; ruff; commit.
+1. **Tests first:**
+   - Round-trip σ ∈ {0.05, 0.1, 0.2, 0.4} across strikes incl. deep ITM/OTM; **European** recover σ within 1e-6.
+   - **American** round-trip: price with tree, invert with same tree/steps → within 1e-5 (tree not smooth at small steps).
+   - Out-of-bounds → NaN + correct code.
+   - Near-expiry T = 0.008 (~3 days): round-trips or returns reason code, never a wrong value.
+2. **Implement:** bracket [1e-4, 3.0], `scipy.optimize.brentq` primary; check sign change at both ends first.
+3. American: objective = binomial price − mid. Document binomial price monotone ↑ in σ; verify on grid.
+4. Newton with vega optional — only if Brent too slow for full chain, and only after convergence confirmed vs Brent; else skip and note in report.
+5. Record American IV difference vs Black-Scholes IV for every snapshot option → feeds report.
+
+## Exit criteria
+Round-trip tests green; reason codes tested.
