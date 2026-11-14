@@ -1,17 +1,30 @@
----
-description: Task 8 — no-arbitrage checks
----
+# Task 08: No-Arbitrage Checks (American-aware)
 
-# Task 8: No-Arbitrage Checks (FR-8)
+**Source:** Master Plan Part E Task 08 (Review B.1) | Implements: FR-8
+
+## Key correction (B.1)
+Put-call parity is an equality only for European options. SPY is American → use American parity **bounds**, not the equality.
 
 ## Files
-- `src/volsurf/arbitrage.py`, `tests/test_arbitrage_checks.py`
+- Create: `src/volsurf/arbitrage.py`, `tests/test_arbitrage_checks.py`, `docs/american_parity_bounds.md`
 
 ## Interfaces
-- `run_checks(df, spot, r, q, tol) -> report DataFrame` — per check: {check, violations, sample}.
-- Checks (§6.6): put-call parity (|C−P−(S e^{−qT}−K e^{−rT})| > spread-tol), strike monotonicity (calls ↓K, puts ↑K), convexity/butterfly (call prices convex in K), calendar monotonicity (total var = IV²T non-decreasing in T at fixed moneyness).
+- `run_checks(df, spot, r, q, tol) -> DataFrame` — columns: check, expiry, violations, sample
+- `implied_forward(df, expiry, r, T) -> (forward, n_pairs)`
+
+## Checks
+1. **Put-call parity (American bounds):** conservative pair S e^{−qT} − K ≤ C − P ≤ S − K e^{−rT}. **Validate bounds numerically against the binomial pricer on synthetic data before use.** Never the European equality.
+2. **Strike monotonicity:** per expiry, call mids ↓ in K, put mids ↑ in K.
+3. **Convexity (butterfly):** per expiry, call mids convex in K — second difference across three adjacent strikes ≥ 0, tolerance = half bid-ask spread at middle strike.
+4. **Calendar monotonicity:** at fixed log-moneyness k, total variance w = IV²·T nondecreasing in T; interpolate IV at fixed k across expiries first.
+5. **Forward consistency (extra):** parity-implied forward ≈ S e^{(r−q)T} within tolerance; report implied q per expiry as dividend cross-check.
 
 ## Steps
-- [ ] Tests (synthetic, known violations): each check flags its engineered violation; clean monotonic chain passes; parity holds within a wide-enough tolerance on mid prices.
-- [ ] Implement: group by expiry for per-slice checks, pair calls/puts by strike for parity; butterfly via second-difference of straddle or call prices.
-- [ ] Run on cleaned snapshot, write `results/arbitrage_report.csv` (before+after cleaning). Commit.
+1. **Tests first** — synthetic chains with one planted violation per check; each flags its violation; clean chain passes.
+2. Test American parity bounds on binomial-priced synthetic chains — all bounds must hold for tree prices; document any failure.
+3. Implement per-expiry; pair calls/puts by strike.
+4. Run before (raw) and after (cleaned) cleaning; write `results/arbitrage_report.csv` side by side.
+5. Report violation counts + samples honestly; residual violations after cleaning are a finding.
+
+## Exit criteria
+Planted-violation tests green; American bounds validated; report written.
