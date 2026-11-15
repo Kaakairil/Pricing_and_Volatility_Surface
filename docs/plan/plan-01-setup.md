@@ -28,3 +28,17 @@
 
 ## Exit criteria
 - `pip install -e .` succeeds; `python -c "import volsurf"` works; `ruff check .` passes; `pytest` runs clean (zero tests).
+
+## Gap audit fixes (2026-11-16) — found reviewing tasks 01–04
+1. **Config types:** `config/pricing_grid.yaml` maturities must parse as floats, not the
+   strings `'1.0/52'`, `'1.0/12'`. Use decimal literals (`0.0192307692`, `0.0833333333`)
+   or `maturity_days: [7, 30, 91, 365]`. Add a test that loads the YAML and asserts
+   `isinstance(maturity, float)` for every entry.
+2. **Generated artifacts:** `.gitignore` must include `.coverage`, `.coverage.*`,
+   `htmlcov/`; `git rm --cached .coverage` — the file is currently tracked.
+3. **Make unavailable:** `make` is not installed on the development machine (Windows).
+   Keep `Makefile`, but record the direct equivalents (`.venv/Scripts/python -m pytest
+   -m "not network"`, `.venv/Scripts/ruff check src tests`) in the README, and fix the
+   `clean` target so it actually runs (current `python -c` one-liner is invalid).
+4. **Coverage gate:** `fail_under = 85` is configured but nothing runs coverage. Add
+   `--cov=volsurf --cov-report=term-missing` to the test target so the gate is enforced.
