@@ -111,3 +111,17 @@ class TestGreeksEdgeCases:
         assert rho(90, 100, 1.0, 0.0, 0.05, 0.02, "call") == 0.0
         assert rho(90, 100, 1.0, 0.0, 0.05, 0.02, "put") < 0.0
         assert rho(110, 100, 1.0, 0.0, 0.05, 0.02, "put") == 0.0
+
+
+class TestFiniteInputValidation:
+    @pytest.mark.parametrize("field", ["S", "K", "T", "sigma", "r", "q"])
+    @pytest.mark.parametrize("bad", [float("nan"), float("inf"), float("-inf")])
+    def test_rejects_nonfinite_inputs(self, field, bad):
+        values = {"S": 100.0, "K": 100.0, "T": 1.0, "sigma": 0.2, "r": 0.05, "q": 0.02}
+        values[field] = bad
+        with pytest.raises(ValueError):
+            black_scholes(**values, option="call")
+
+    def test_rejects_implausibly_large_volatility(self):
+        with pytest.raises(ValueError):
+            black_scholes(100, 100, 1.0, 6.0, 0.05, 0.02, "call")
