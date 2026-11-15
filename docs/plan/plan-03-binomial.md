@@ -22,14 +22,9 @@
 ## Exit criteria
 Tests green; runtime recorded.
 
-## Gap audit fixes (2026-11-16)
-1. **European overflow:** the European branch converts `math.comb(N, k)` to float and
-   raises `OverflowError` for N >= 5000 (verified). Compute probabilities in log space
-   (`scipy.stats.binom.pmf` or `lgamma`) instead. Add a regression test at `steps=10_000`,
-   `american=False` that returns a finite price close to Black-Scholes.
-2. **Runtime target missed:** measured 1000-step American = ~25 ms vs the 10 ms target.
-   Either revise the target to what the implementation achieves, or cut the cost
-   (e.g. build the tree on log-moneyness and avoid the per-step `u_pow * d_pow` product).
-   Record the decision in `docs/binomial_method.md`.
-3. **Cross-check with Monte Carlo (PRD §8):** add a test that European binomial and Monte
-   Carlo agree within the combined tolerance `3 * SE_MC + 0.01` at 3 grid points.
+## Gap audit updates (2026-11-16)
+1. **European overflow:** converting `math.comb(N, k)` to float raises `OverflowError` at N >= 5000. Use numerically stable binomial probabilities and add a finite-price test at 10,000 European steps against BSM.
+2. **Runtime criterion:** measured 1,000-step American pricing is ~25 ms, above the <10 ms target. Record as unmet or optimize, then update the criterion based on measured evidence; do not report the existing runtime as meeting target.
+3. **Cross-method coverage:** PRD §8 requires European binomial-vs-Monte-Carlo agreement. Add a deterministic-seed test at representative grid points with tolerance `0.01 + 3*SE_MC`.
+4. **Deterministic boundaries:** specify/test `T == 0` and `sigma == 0`; current CRR validity check rejects these instead of returning deterministic discounted intrinsic value (or a documented validation error).
+5. Expand the current four-case European test grid or explicitly label it representative; it does not cover PRD §9.1's full spot × moneyness × maturity × volatility grid.
