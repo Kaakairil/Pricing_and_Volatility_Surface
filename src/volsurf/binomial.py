@@ -80,7 +80,11 @@ def binomial_price(
         for k in range(steps - 1, -1, -1):
             s_node = S * u_pow[: k + 1] * d_pow[k::-1]
             continuation = disc_steps * (p * value[1 : k + 2] + (1 - p) * value[: k + 1])
-            intrinsic = np.maximum(s_node - K, 0.0) if option == "call" else np.maximum(K - s_node, 0.0)
+            intrinsic = (
+                np.maximum(s_node - K, 0.0)
+                if option == "call"
+                else np.maximum(K - s_node, 0.0)
+            )
             value = np.maximum(continuation, intrinsic)
         return float(value[0])
 
