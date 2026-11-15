@@ -85,9 +85,11 @@ class TestValidityBoundary:
 
 class TestAtTheMoneySmoke:
     def test_price_dimensions(self):
-        import numpy as np
 
-        S = np.array([90.0, 100.0, 110.0])
-        out = [binomial_price(s, 100, 0.25, 0.2, 0.05, 0.0, "call", steps=200, american=True) for s in S]
+        spots = np.array([90.0, 100.0, 110.0])
+        out = [
+            binomial_price(s, 100, 0.25, 0.2, 0.05, 0.0, "call", steps=200, american=True)
+            for s in spots
+        ]
         assert len(out) == 3
         assert all(np.isfinite(out))
