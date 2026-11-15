@@ -12,17 +12,25 @@ import math
 from scipy.stats import norm
 
 _VALID_OPTIONS = ("call", "put")
+_MAX_SIGMA = 5.0  # plausible-volatility ceiling (PRD §10); 500% is far outside any SPY surface
 
 
 def _validate(S: float, K: float, T: float, sigma: float, r: float, q: float, option: str) -> None:
     if option not in _VALID_OPTIONS:
         raise ValueError(f"option must be 'call' or 'put', got {option!r}")
+    for name, value in (("S", S), ("K", K), ("T", T), ("sigma", sigma), ("r", r), ("q", q)):
+        if not isinstance(value, (int, float)):
+            raise ValueError(f"{name} must be a number, got {value!r}")
+        if not math.isfinite(value):
+            raise ValueError(f"{name} must be finite, got {value!r}")
     if S <= 0 or K <= 0:
         raise ValueError(f"spot and strike must be positive, got S={S}, K={K}")
     if T < 0:
         raise ValueError(f"maturity must be non-negative, got T={T}")
     if sigma < 0:
         raise ValueError(f"volatility must be non-negative, got sigma={sigma}")
+    if sigma > _MAX_SIGMA:
+        raise ValueError(f"volatility above plausible ceiling {_MAX_SIGMA}, got sigma={sigma}")
 
 
 def _intrinsic(S: float, K: float, T: float, r: float, q: float, option: str) -> float:
@@ -46,7 +54,7 @@ def black_scholes(
 
 
 def delta(S: float, K: float, T: float, sigma: float, r: float, q: float, option: str) -> float:
-    """dV / dS."""
+    """dV / dS, per unit of spot (unitless, in [0, 1] for calls)."""
     _validate(S, K, T, sigma, r, q, option)
     if T == 0.0 or sigma == 0.0:
         if option == "call":
@@ -59,7 +67,7 @@ def delta(S: float, K: float, T: float, sigma: float, r: float, q: float, option
 
 
 def gamma(S: float, K: float, T: float, sigma: float, r: float, q: float, option: str) -> float:
-    """d^2 V / dS^2 (identical for calls and puts)."""
+    """d^2 V / dS^2, per unit spot squared (identical for calls and puts)."""
     _validate(S, K, T, sigma, r, q, option)
     if T == 0.0 or sigma == 0.0:
         return 0.0
@@ -68,7 +76,7 @@ def gamma(S: float, K: float, T: float, sigma: float, r: float, q: float, option
 
 
 def vega(S: float, K: float, T: float, sigma: float, r: float, q: float, option: str) -> float:
-    """dV / d sigma (per unit of sigma)."""
+    """dV / d sigma, per unit of volatility (1.0 = 100 vol points, not per 1%)."""
     _validate(S, K, T, sigma, r, q, option)
     if T == 0.0 or sigma == 0.0:
         return 0.0
@@ -77,7 +85,7 @@ def vega(S: float, K: float, T: float, sigma: float, r: float, q: float, option:
 
 
 def theta(S: float, K: float, T: float, sigma: float, r: float, q: float, option: str) -> float:
-    """dV / dt = -dV / dT per year (Hull Ch. 19 convention)."""
+    """dV / dt = -dV / dT, per year (Hull Ch. 19 convention); divide by 365 for per-day."""
     _validate(S, K, T, sigma, r, q, option)
     if T == 0.0:
         return 0.0
@@ -102,7 +110,7 @@ def theta(S: float, K: float, T: float, sigma: float, r: float, q: float, option
 
 
 def rho(S: float, K: float, T: float, sigma: float, r: float, q: float, option: str) -> float:
-    """dV / dr (per unit of r)."""
+    """dV / dr, per unit of the continuously compounded rate r."""
     _validate(S, K, T, sigma, r, q, option)
     if T == 0.0 or sigma == 0.0:
         f_s = S * math.exp(-q * T)
