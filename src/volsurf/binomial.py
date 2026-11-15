@@ -9,6 +9,7 @@ from __future__ import annotations
 import math
 
 import numpy as np
+from scipy.stats import binom
 
 from volsurf.bsm import _validate
 
@@ -50,6 +51,14 @@ def binomial_price(
     _validate(S, K, T, sigma, r, q, option)
     if steps < 1:
         raise ValueError(f"steps must be >= 1, got {steps}")
+    if T == 0.0:
+        # Exercise at maturity only: intrinsic value, identical for American and European.
+        return float(max(S - K, 0.0)) if option == "call" else float(max(K - S, 0.0))
+    if sigma == 0.0:
+        raise ValueError(
+            "tree degenerate at zero volatility (u = d = 1); use black_scholes for the "
+            "deterministic-limit value"
+        )
 
     dt = T / steps
     u = math.exp(sigma * math.sqrt(dt))
@@ -81,15 +90,13 @@ def binomial_price(
             s_node = S * u_pow[: k + 1] * d_pow[k::-1]
             continuation = disc_steps * (p * value[1 : k + 2] + (1 - p) * value[: k + 1])
             intrinsic = (
-                np.maximum(s_node - K, 0.0)
-                if option == "call"
-                else np.maximum(K - s_node, 0.0)
+                np.maximum(s_node - K, 0.0) if option == "call" else np.maximum(K - s_node, 0.0)
             )
             value = np.maximum(continuation, intrinsic)
         return float(value[0])
 
-    # European: sum terminal payoff weighted by binomial probabilities, discount once
+    # European: payoff weighted by binomial probabilities (computed in log space to avoid
+    # overflow of math.comb at large step counts), discounted once by e^{-rT}.
     ks = np.arange(steps + 1, dtype=float)
-    binom = np.array([math.comb(steps, int(k)) for k in ks], dtype=float)
-    prob = binom * (p ** ks) * ((1 - p) ** (steps - ks))
+    prob = binom.pmf(ks, steps, p)
     return float(np.sum(prob * value) * math.exp(-r * T))
