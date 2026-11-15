@@ -9,6 +9,9 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 *.egg-info/
+.coverage
+.coverage.*
+htmlcov/
 
 # data + results (snapshots and results CSVs ARE committed; raw + figures are not)
 data/raw/
