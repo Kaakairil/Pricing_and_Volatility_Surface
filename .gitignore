@@ -1,0 +1,18 @@
+# local settings
+.claude/settings.local.json
+AGENTS.md
+
+# python
+__pycache__/
+*.pyc
+.venv*/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# data + results (snapshots and results CSVs ARE committed; raw + figures are not)
+data/raw/
+results/figures/
+
+# superpowers scratch
+.superpowers/

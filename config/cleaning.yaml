@@ -1,0 +1,7 @@
+# Cleaning thresholds (PRD §6.5 order). Applied in listed order.
+max_spread_pct_of_mid: 0.50
+min_open_interest: 100
+min_volume: 1
+min_t_days: 7
+moneyness_min: 0.7
+moneyness_max: 1.3

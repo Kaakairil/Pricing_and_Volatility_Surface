@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "volsurf"
+version = "0.1.0"
+description = "Options pricing and volatility surface analysis (SPY)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26,<3",
+    "scipy>=1.11,<2",
+    "pandas>=2.1,<3",
+    "yfinance>=0.2.40,<2",
+    "matplotlib>=3.8,<4",
+    "pyyaml>=6.0,<7",
+    "requests>=2.31,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0,<9",
+    "pytest-cov>=4.1,<6",
+    "ruff>=0.4,<1",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "network: requires internet access (deselect with -m 'not network')",
+    "slow: long-running tests (deselect with -m 'not slow')",
+]
+
+[tool.coverage.report]
+fail_under = 85
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]

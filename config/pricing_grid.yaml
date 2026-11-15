@@ -1,0 +1,7 @@
+# PRD §9.1 verification grid
+spot: [90, 100, 110]
+moneyness: [0.8, 0.9, 1.0, 1.1, 1.2]
+maturity_years: [1.0/52, 1.0/12, 0.25, 1.0]
+volatility: [0.1, 0.2, 0.4]
+rate: 0.05
+dividend_yield: 0.02
