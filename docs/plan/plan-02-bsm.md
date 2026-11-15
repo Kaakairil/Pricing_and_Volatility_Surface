@@ -21,3 +21,12 @@
 
 ## Exit criteria
 Tests green; coverage of `bsm.py` ≥ 95%; ruff clean.
+
+## Gap audit fixes (2026-11-16)
+1. **Non-finite inputs:** `_validate` accepts NaN and ±inf (verified: `black_scholes(nan, …)`
+   returns NaN). PRD §10 forbids silent NaN. Reject non-finite `S, K, T, sigma, r, q`
+   with `ValueError`, and test NaN and inf for each.
+2. **Plausible volatility range:** PRD §10 requires volatility validation. Decide and
+   document an upper bound (e.g. `sigma <= 5`) or justify leaving it open; test the choice.
+3. Remove `test_math_imported` (scaffolding that only exists to keep an import alive).
+4. Greek docstrings: state units (per unit of S, per unit of σ, per year, per unit of r).
