@@ -22,11 +22,9 @@
 ## Exit criteria
 Tests green; coverage of `bsm.py` ≥ 95%; ruff clean.
 
-## Gap audit fixes (2026-11-16)
-1. **Non-finite inputs:** `_validate` accepts NaN and ±inf (verified: `black_scholes(nan, …)`
-   returns NaN). PRD §10 forbids silent NaN. Reject non-finite `S, K, T, sigma, r, q`
-   with `ValueError`, and test NaN and inf for each.
-2. **Plausible volatility range:** PRD §10 requires volatility validation. Decide and
-   document an upper bound (e.g. `sigma <= 5`) or justify leaving it open; test the choice.
-3. Remove `test_math_imported` (scaffolding that only exists to keep an import alive).
-4. Greek docstrings: state units (per unit of S, per unit of σ, per year, per unit of r).
+## Gap audit updates (2026-11-16)
+1. **Finite input validation:** `_validate` accepts NaN and ±inf, which propagate silently. Reject non-finite `S, K, T, sigma, r, q` with `ValueError`; test each parameter with NaN and infinity.
+2. **Volatility bounds:** PRD §10 says volatility must be plausible but defines no numeric ceiling. Choose and document a defensible supported range (avoid arbitrary cap without rationale); test boundary and outside values.
+3. **Finite-difference grid defect:** plan specifies moneyness `K/S`, but `tests/test_greeks_finite_difference.py` sets `K=m*100` for every spot. Generate `K=m*S` so all three spot levels genuinely test each moneyness.
+4. Remove `test_math_imported`; it exists only to keep an unused import alive. Keep test imports limited to actual test behavior.
+5. State units in Greek docstrings: delta per spot unit, gamma per spot-unit squared, vega per unit volatility, theta per year, rho per unit rate.
