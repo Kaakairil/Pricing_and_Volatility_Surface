@@ -29,16 +29,9 @@
 ## Exit criteria
 - `pip install -e .` succeeds; `python -c "import volsurf"` works; `ruff check .` passes; `pytest` runs clean (zero tests).
 
-## Gap audit fixes (2026-11-16) — found reviewing tasks 01–04
-1. **Config types:** `config/pricing_grid.yaml` maturities must parse as floats, not the
-   strings `'1.0/52'`, `'1.0/12'`. Use decimal literals (`0.0192307692`, `0.0833333333`)
-   or `maturity_days: [7, 30, 91, 365]`. Add a test that loads the YAML and asserts
-   `isinstance(maturity, float)` for every entry.
-2. **Generated artifacts:** `.gitignore` must include `.coverage`, `.coverage.*`,
-   `htmlcov/`; `git rm --cached .coverage` — the file is currently tracked.
-3. **Make unavailable:** `make` is not installed on the development machine (Windows).
-   Keep `Makefile`, but record the direct equivalents (`.venv/Scripts/python -m pytest
-   -m "not network"`, `.venv/Scripts/ruff check src tests`) in the README, and fix the
-   `clean` target so it actually runs (current `python -c` one-liner is invalid).
-4. **Coverage gate:** `fail_under = 85` is configured but nothing runs coverage. Add
-   `--cov=volsurf --cov-report=term-missing` to the test target so the gate is enforced.
+## Gap audit updates (2026-11-16)
+1. **YAML types:** quote-free `1.0/52` and `1.0/12` parse as strings, not arithmetic. Store numeric maturities as decimals (`0.0192307692`, `0.0833333333`) and test parsed types/values.
+2. **Generated coverage data:** add `.coverage`, `.coverage.*`, and `htmlcov/` to `.gitignore`; untrack `.coverage`. It is currently tracked despite being generated.
+3. **Enforce coverage:** `fail_under = 85` alone does not collect coverage. Configure the test command with `--cov=volsurf --cov-report=term-missing`.
+4. **Clean target:** replace current invalid `python -c` loop and shell-specific cleanup with a tested, working command. `make` is not installed in this Windows environment; document equivalent direct commands in README, but do not treat missing local `make` as a package defect.
+5. **Reproducibility:** dependency ranges (`>=…,<…`) are not locked versions. Pin exact versions or add a committed lock/constraints file, then verify clean editable installation from that contract.
