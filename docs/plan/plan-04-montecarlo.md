@@ -20,3 +20,19 @@
 
 ## Exit criteria
 Tests green.
+
+## Gap audit fixes (2026-11-16)
+1. **SE must use pair averages (step 3 was not implemented).** With antithetic variates the
+   estimator's SE is over the `n` pair means, not the `2n` individual paths. Verified defect:
+   50-seed dispersion / reported SE = 1.44 (correct pair-average SE gives 1.05). Fix the
+   estimator and strengthen `test_estimates_consistent_with_reported_se` to 30 seeds with
+   ratio tolerance 0.8–1.25.
+2. **Degenerate control variate:** `np.var(x)` is 0 when `T == 0` or `sigma == 0`, giving a
+   divide-by-zero warning and `(nan, nan)` (verified). Skip the control variate in that case
+   (or raise a documented error), and test `T=0`, `sigma=0`.
+3. **Path count contract:** odd `paths` silently truncates (`paths=5` → 4 draws). Either
+   require `paths >= 2` and an even count when `antithetic=True`, or document that `paths`
+   is the number of simulated paths (pairs = paths // 2). Test the contract.
+4. **Binomial vs Monte Carlo cross-check (PRD §8):** add agreement test within combined
+   tolerance.
+5. Reject non-finite inputs (consistent with the BSM validation fix).
