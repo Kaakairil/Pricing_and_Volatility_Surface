@@ -93,3 +93,22 @@ class TestAtTheMoneySmoke:
         ]
         assert len(out) == 3
         assert all(np.isfinite(out))
+
+
+class TestDeterministicBoundaries:
+    @pytest.mark.parametrize("option", ["call", "put"])
+    def test_zero_maturity_returns_intrinsic(self, option):
+        S, K = (110, 100) if option == "call" else (90, 100)
+        price = binomial_price(S, K, 0.0, 0.2, 0.05, 0.02, option, steps=10, american=True)
+        assert price == pytest.approx(10.0)
+
+    def test_zero_volatility_has_clear_error(self):
+        with pytest.raises(ValueError, match="zero volatility"):
+            binomial_price(110, 100, 1.0, 0.0, 0.05, 0.02, "call")
+
+    def test_european_large_step_count_is_finite_and_converges(self):
+        params = (100, 100, 0.5, 0.3, 0.05, 0.02, "call")
+        tree = binomial_price(*params, steps=10_000, american=False)
+        bs = black_scholes(*params)
+        assert np.isfinite(tree)
+        assert abs(tree - bs) < 0.01
