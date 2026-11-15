@@ -21,18 +21,10 @@
 ## Exit criteria
 Tests green.
 
-## Gap audit fixes (2026-11-16)
-1. **SE must use pair averages (step 3 was not implemented).** With antithetic variates the
-   estimator's SE is over the `n` pair means, not the `2n` individual paths. Verified defect:
-   50-seed dispersion / reported SE = 1.44 (correct pair-average SE gives 1.05). Fix the
-   estimator and strengthen `test_estimates_consistent_with_reported_se` to 30 seeds with
-   ratio tolerance 0.8–1.25.
-2. **Degenerate control variate:** `np.var(x)` is 0 when `T == 0` or `sigma == 0`, giving a
-   divide-by-zero warning and `(nan, nan)` (verified). Skip the control variate in that case
-   (or raise a documented error), and test `T=0`, `sigma=0`.
-3. **Path count contract:** odd `paths` silently truncates (`paths=5` → 4 draws). Either
-   require `paths >= 2` and an even count when `antithetic=True`, or document that `paths`
-   is the number of simulated paths (pairs = paths // 2). Test the contract.
-4. **Binomial vs Monte Carlo cross-check (PRD §8):** add agreement test within combined
-   tolerance.
-5. Reject non-finite inputs (consistent with the BSM validation fix).
+## Gap audit updates (2026-11-16)
+1. **Antithetic standard error:** compute standard error over independent pair-level observations, not individual paths. When using control variate, form pair means for both discounted payoff `Y` and control `X`, estimate beta from those paired observations, then calculate SE from adjusted pair estimates. Existing implementation uses individual observations; across 50 seeds observed dispersion / reported SE was 1.44, while pair-level SE gave 1.05. Treat these as diagnostics, not universal constants.
+2. **Seed-spread regression:** strengthen beyond 10 seeds; verify empirical standard deviation against the mean reported SE with a tolerance justified by sampling variability (e.g. 30+ fixed seeds, 0.8–1.25).
+3. **Degenerate control:** at `T == 0` or `sigma == 0`, control variance is zero and current code returns `(nan, nan)` with a warning. Skip control adjustment when variance is zero; estimator should return deterministic price and SE 0.
+4. **Sample count contract:** require at least two observations for a defined sample SE; when antithetic is enabled, either require even `paths >= 2` or define `paths` as pair count and adjust API/docs consistently. Do not silently discard odd paths.
+5. Reject non-finite inputs as specified for BSM validation; test this public entry point too.
+6. Add European binomial-vs-Monte-Carlo agreement test required by PRD §8. Use discounted-stock control `X=e^{-rT}S_T` with known mean `S e^{-qT}` as the valid control variate; clarify this choice against PRD's ambiguous phrase “closed-form price as the control.”
