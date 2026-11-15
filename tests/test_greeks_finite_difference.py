@@ -1,8 +1,6 @@
 """Greeks vs central finite differences — PRD §8.2, rel err < 1e-4 with
 absolute floor 1e-8 near zero (AGENTS.md numerical discipline)."""
 
-import math
-
 import pytest
 
 from volsurf.bsm import black_scholes, delta, gamma, rho, theta, vega
@@ -13,7 +11,7 @@ GRID = [
     for m in (0.8, 1.0, 1.2)
     for T in (0.02, 0.08, 0.25, 1.0)
     for sigma in (0.1, 0.2, 0.4)
-    for K in [m * 100.0]
+    for K in [m * S]
 ]
 R, Q = 0.05, 0.02
 ABS_FLOOR = 1e-8
@@ -78,7 +76,3 @@ def test_rho_vs_fd(S, K, T, sigma, option):
     _assert_close(
         rho(S, K, T, sigma, R, Q, option), fd, f"rho S={S} K={K} T={T} sig={sigma} {option}"
     )
-
-
-def test_math_imported():
-    assert math is not None  # keep flake8 happy; math used in docstring example only
