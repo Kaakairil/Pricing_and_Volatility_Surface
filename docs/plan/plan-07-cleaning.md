@@ -46,3 +46,22 @@
 ## Exit criteria
 Reconciliation test green; `cleaning_report.csv` written; CLI reproduces the
 same counts from the committed snapshot; thresholds provably come from the YAML.
+
+## Result (2026-11-16 snapshot, spot 754.37)
+
+Raw chain: **10,354** rows (32 expiries, calls + puts).
+
+| # | Rule | Removed | Remaining |
+|---|---|---|---|
+| 1 | zero/non-finite bid or ask | 1,272 | 9,082 |
+| 2 | spread > 50% of mid | 749 | 8,333 |
+| 3 | mid = (bid+ask)/2 | 0 | 8,333 |
+| 4 | OI < 100 or volume < 1 | 3,545 | 4,788 |
+| 5 | T < 7 days | 512 | 4,276 |
+| 6 | moneyness outside [0.7, 1.3] | 701 | 3,575 |
+
+Cleaned: **3,575** rows with derived `mid`, `tte`, `moneyness`. Reconciliation:
+10,354 − 6,779 = 3,575 ✓. Reproduce with
+`python -m volsurf.cli clean data/snapshots/spy_2026-11-16.csv -o results`.
+Artifacts: `results/cleaning_report.csv`, `results/cleaned_2026-11-16.csv`.
+28 tests across cleaning/config-io/CLI green.
