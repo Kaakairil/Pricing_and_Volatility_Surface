@@ -1,11 +1,12 @@
-# Frozen market parameters (PRD §16). Values filled at Task 06 snapshot fetch.
 ticker: SPY
-snapshot_date: null        # YYYY-MM-DD, filled Task 06
-fetch_time_utc: null       # ISO 8601, filled Task 06
-rate_series: DTB3          # FRED 3-month T-bill discount rate
+snapshot_date: '2026-11-16'
+fetch_time_utc: '2026-11-16T14:27:41.987208+00:00'
+rate_series: DTB3
 rate_tenor_days: 91
-rate_value: null           # decimal, continuous compounding, filled Task 06
-rate_source: null          # e.g. "FRED DTB3 <date>"
+rate_value: 0.04219617863034214
+rate_source: FRED DTB3 2026-11-12
 dividend_method: trailing_12m
-dividend_yield: null       # decimal continuous, filled Task 06
-rate_sensitivity_bp: [-100, 100]
+dividend_yield: 0.007477573830616421
+rate_sensitivity_bp:
+- -100
+- 100
