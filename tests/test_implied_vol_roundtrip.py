@@ -44,6 +44,32 @@ class TestEuropeanRoundTrip:
 
 
 class TestAmericanRoundTrip:
+    @pytest.mark.parametrize("sigma", [0.3, 0.4])
+    def test_deep_itm_and_otm(self, sigma):
+        # Deep-ITM American options with q > 0 price above the discounted
+        # European intrinsic and (calls) can exceed S e^{-qT}; the American
+        # bounds (lower = undiscounted intrinsic, upper = S) must accept the
+        # price and the inversion must recover sigma (plan-05 gap audit).
+        # sigma >= 0.3 keeps every strike above the intrinsic plateau where
+        # IV would be non-identifiable (documented below).
+        S, T, r, q = 100.0, 0.25, 0.05, 0.02
+        for K, option in DEEP_STRIKES:
+            price = binomial_price(S, K, T, sigma, r, q, option, steps=500, american=True)
+            iv, reason = implied_volatility(
+                S, K, T, price, r, q, option, style="american", steps=500
+            )
+            assert reason == "ok", (K, option, sigma)
+            assert abs(iv - sigma) < 1e-5
+
+    def test_put_at_intrinsic_is_non_identifiable_not_arbitrage(self):
+        # A deep-ITM American put priced exactly at its intrinsic value is
+        # flat in sigma below the exercise boundary (no unique IV). It must
+        # return NaN with an explicit reason, never a fabricated sigma.
+        S, K, T, r, q = 100.0, 120.0, 0.25, 0.05, 0.02
+        iv, reason = implied_volatility(S, K, T, K - S, r, q, "put", style="american", steps=500)
+        assert np.isnan(iv)
+        assert reason in ("LOW-NA", "NO-BRACKET")
+
     @pytest.mark.parametrize("S,K,T,sigma,r,q", GRID)
     @pytest.mark.parametrize("option", ["call", "put"])
     def test_recovers_sigma_with_same_tree(self, S, K, T, sigma, r, q, option):
@@ -95,6 +121,44 @@ class TestValidation:
     def test_rejects_bad_style(self):
         with pytest.raises(ValueError, match="style"):
             implied_volatility(100, 100, 0.25, 5.0, 0.05, 0.02, "call", style="exotic")
+
+
+class TestAmericanBounds:
+    @pytest.mark.parametrize(
+        "option, S, K, price",
+        [("call", 120.0, 100.0, 10.0), ("put", 100.0, 120.0, 10.0)],
+    )
+    def test_price_below_undiscounted_intrinsic_is_low_na(self, option, S, K, price):
+        # American lower bound = undiscounted intrinsic (exercise now), which
+        # for deep-ITM with q > 0 exceeds the discounted European intrinsic
+        # (deep-ITM: discounted intrinsic is ~0, undiscounted is K-S or S-K).
+        # A price between the two was previously misreported NO-BRACKET and
+        # must now be LOW-NA.
+        T, r, q = 0.25, 0.05, 0.02
+        assert price < abs(K - S)  # sanity: price below undiscounted intrinsic
+        iv, reason = implied_volatility(S, K, T, price, r, q, option, style="american", steps=500)
+        assert np.isnan(iv)
+        assert reason == "LOW-NA"
+
+    def test_american_upper_bound_is_dominance_not_discounted(self):
+        # American call upper bound is S (dominance), not S e^{-qT}; American
+        # put upper bound is K, not K e^{-rT}. A price in (S e^{-qT}, S) must
+        # therefore be classified by the S bound, not rejected as HIGH-NA.
+        from volsurf.implied_vol import _price_bound
+
+        S, K, T, r, q = 100.0, 90.0, 1.0, 0.05, 0.5
+        lo, hi = _price_bound(S, K, T, r, q, "call", "american")
+        assert hi == S
+        lo_p, hi_p = _price_bound(S, K, T, r, q, "put", "american")
+        assert hi_p == K
+
+        # A price just below S is within the legitimate American range and
+        # must NOT be flagged HIGH-NA (a price above S still is).
+        iv, reason = implied_volatility(S, K, T, 99.0, r, q, "call", style="american")
+        assert reason != "HIGH-NA"
+        iv2, reason2 = implied_volatility(S, K, T, S + 1.0, r, q, "call", style="american")
+        assert np.isnan(iv2)
+        assert reason2 == "HIGH-NA"
 
 
 class TestNearExpiry:
