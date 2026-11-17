@@ -34,3 +34,29 @@
 Unit tests green; one snapshot committed with checksum + metadata; `config/market.yaml` filled.
 
 **Timing note:** quotes unreliable off-hours — fetch during session or immediately after close; record fetch time in metadata.
+
+## Gap audit updates (2026-11-18)
+1. **`yf_iv` rename not applied:** step 4 says the raw yfinance IV column is
+   stored as `yf_iv`; `fetch_chain` keeps yfinance's own `impliedVolatility`
+   name. Rename to `yf_iv` in `fetch_chain` (future snapshots) and document
+   that the committed 2026-11-16 snapshot keeps the original column name —
+   it is never read by any calculation either way.
+2. **Committed-snapshot reload test missing:** step 6 (exit criterion) has no
+   test. Add an offline test loading the committed
+   `data/snapshots/spy_2026-11-16.csv` through `load_snapshot` (checksum
+   verified) and checking row counts against the metadata.
+3. **Date-mismatch guard missing (B.2):** "refuse to write snapshot whose
+   recorded date ≠ fetch date" is satisfied only by construction in
+   `fetch.py`. Add an explicit guard in `save_snapshot`: when both
+   `fetch_time_utc` and `snapshot_date` are present and their dates differ,
+   raise `ValueError`. Test both directions.
+4. **Coverage gate red (81% < 85%):** `fetch.py` (51 statements, network
+   module) has no offline tests. Add `tests/test_fetch.py` mocking
+   `requests.get`, `fetch_chain`, and the yfinance ticker, covering
+   `_latest_dtb3` parsing, the percent→decimal division in `main` (the exact
+   bug class that bit the first fetch), snapshot write, and config fill.
+5. **Spot timestamp not recorded:** plan asks for "exact fetch time (UTC) +
+   spot timestamp"; yfinance exposes no quote timestamp. Record
+   `spot_source` in metadata instead; document the limitation here.
+6. **Task 05 dependency:** deep-ITM American bounds fix belongs to plan-05;
+   see that file's gap audit (2026-11-18).

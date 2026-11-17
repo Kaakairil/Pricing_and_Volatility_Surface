@@ -35,3 +35,13 @@
 3. **Enforce coverage:** `fail_under = 85` alone does not collect coverage. Configure the test command with `--cov=volsurf --cov-report=term-missing`.
 4. **Clean target:** replace current invalid `python -c` loop and shell-specific cleanup with a tested, working command. `make` is not installed in this Windows environment; document equivalent direct commands in README, but do not treat missing local `make` as a package defect.
 5. **Reproducibility:** dependency ranges (`>=…,<…`) are not locked versions. Pin exact versions or add a committed lock/constraints file, then verify clean editable installation from that contract.
+
+## Gap audit round 2 (2026-11-18) — status of the 2026-11-16 items
+1. YAML types — **done**: `pricing_grid.yaml` stores decimals; `tests/test_config.py` checks types/values.
+2. Generated coverage data — **done**: `.coverage*`/`htmlcov/` ignored, nothing tracked.
+3. Coverage enforcement — **broken**: the `--cov` flag exists in `make test`, but the gate fails (81% < 85%) because `fetch.py` is untested. Fix belongs to plan-06 (mocked offline fetch tests). **pending**
+4. Clean target — **done**: one-liner runs successfully on Windows; equivalent documented in README.
+5. Dependency lock — **pending**: no lock file. Add committed `constraints.txt` (pinned direct deps) generated from the working venv, wire it into `make setup` (`pip install -e ".[dev]" -c constraints.txt`) and README.
+
+## Additional findings (2026-11-18)
+6. **`make all` / `figures` / `report` reference nonexistent scripts** (`scripts/run_pipeline.py`, `scripts/make_figures.py`, `scripts/make_report.py`). Expected — those are Tasks 08-12 deliverables; do not "fix" by deleting the targets. Note kept here so a fresh-clone `make all` failure is not mistaken for a defect.

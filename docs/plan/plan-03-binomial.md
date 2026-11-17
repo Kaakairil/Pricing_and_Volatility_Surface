@@ -28,3 +28,10 @@ Tests green; runtime recorded.
 3. **Cross-method coverage:** PRD §8 requires European binomial-vs-Monte-Carlo agreement. Add a deterministic-seed test at representative grid points with tolerance `0.01 + 3*SE_MC`.
 4. **Deterministic boundaries:** specify/test `T == 0` and `sigma == 0`; current CRR validity check rejects these instead of returning deterministic discounted intrinsic value (or a documented validation error).
 5. Expand the current four-case European test grid or explicitly label it representative; it does not cover PRD §9.1's full spot × moneyness × maturity × volatility grid.
+
+## Gap audit round 2 (2026-11-18) — status of the 2026-11-16 items
+1. European overflow — **done**: probabilities via `scipy.stats.binom.pmf` (log-space stable); 10,000-step finite + BSM agreement test green.
+2. Runtime criterion — **partial**: `docs/binomial_method.md` records ~25 ms but never states the <10 ms target is unmet. Update the doc to say the target is unmet and the recorded measurement supersedes it.
+3. Cross-method coverage — **done**: `TestBinomialCrossCheck` in `tests/test_montecarlo.py`, tolerance `0.01 + 3*SE`.
+4. Deterministic boundaries — **done**: `T == 0` returns intrinsic; `sigma == 0` raises a documented `ValueError` (chosen path per the audit's "or a documented validation error").
+5. Grid labeling — **pending**: label the four-case GRID in `tests/test_binomial_convergence.py` as a representative subset of PRD §9.1 (full cross-product lives in the Greeks FD test).

@@ -28,3 +28,22 @@ SPY options are American. Invert using the **binomial American price**, not Blac
 
 ## Exit criteria
 Round-trip tests green; reason codes tested.
+
+## Gap audit updates (2026-11-18)
+1. **American no-arbitrage bounds defective.** The lower bound used only the
+   *discounted* European intrinsic; deep-ITM American options (q > 0) retain
+   the undiscounted intrinsic value via immediate exercise, so prices in
+   `[discounted intrinsic, undiscounted intrinsic)` are misreported —
+   `NO-BRACKET` instead of `LOW-NA`. The American call upper bound used
+   `S e^{-qT}`, but dominance gives `S`; a legitimate deep-ITM American call
+   above `S e^{-qT}` is wrongly rejected `HIGH-NA` and a valid round-trip
+   fails. Fix the bounds:
+   - lower = max(discounted intrinsic, undiscounted intrinsic) for American;
+   - upper = `S` (calls) / `K` (puts) for American; unchanged for European.
+   Add round-trip tests for deep-ITM American calls with q > 0 and
+   classification tests for prices between the two intrinsic values.
+2. **Deep-ITM American round-trip coverage:** extend the round-trip grid to
+   include moneyness 0.8/1.2 under the American style (the European side
+   already covers it) so the fixed bounds are exercised.
+3. **Record American-vs-BS IV difference column:** task step 5 lands with the
+   surface task (09+); the comparison column is produced there, not here.

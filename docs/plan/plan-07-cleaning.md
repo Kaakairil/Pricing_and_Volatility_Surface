@@ -47,8 +47,16 @@
 Reconciliation test green; `cleaning_report.csv` written; CLI reproduces the
 same counts from the committed snapshot; thresholds provably come from the YAML.
 
-## Result (2026-11-16 snapshot, spot 754.37)
+## Gap audit round 2 (2026-11-18)
+1. **Input validation gap:** `clean` validates required columns and numeric
+   strike, but not `spot` — a NaN or non-positive spot silently makes the
+   moneyness mask all-False and drops every row (violates the "no silent
+   NaN" standard). Validate `spot` finite and > 0; test.
+2. **`compute_tte` unused by `clean`:** step 5 inlines the day difference
+   while `compute_tte` exists for the same thing. Acceptable duplication for
+   the mask (needs days, not years) — noted, no change.
 
+## Result (2026-11-16 snapshot, spot 754.37)
 Raw chain: **10,354** rows (32 expiries, calls + puts).
 
 | # | Rule | Removed | Remaining |

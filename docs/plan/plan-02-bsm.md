@@ -28,3 +28,10 @@ Tests green; coverage of `bsm.py` ≥ 95%; ruff clean.
 3. **Finite-difference grid defect:** plan specifies moneyness `K/S`, but `tests/test_greeks_finite_difference.py` sets `K=m*100` for every spot. Generate `K=m*S` so all three spot levels genuinely test each moneyness.
 4. Remove `test_math_imported`; it exists only to keep an unused import alive. Keep test imports limited to actual test behavior.
 5. State units in Greek docstrings: delta per spot unit, gamma per spot-unit squared, vega per unit volatility, theta per year, rho per unit rate.
+
+## Gap audit round 2 (2026-11-18) — status of the 2026-11-16 items
+1. Finite input validation — **done**: `_validate` rejects NaN/±inf; parametrized tests per field.
+2. Volatility bounds — **partial**: `_MAX_SIGMA = 5.0` documented in code, but only 6.0 tested. Add a boundary test: σ = 5.0 accepted, just above rejected.
+3. FD grid defect — **done**: tests generate `K = m*S`.
+4. `test_math_imported` — **done**: removed.
+5. Greek units in docstrings — **done**.

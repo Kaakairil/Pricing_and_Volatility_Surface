@@ -28,3 +28,13 @@ Tests green.
 4. **Sample count contract:** require at least two observations for a defined sample SE; when antithetic is enabled, either require even `paths >= 2` or define `paths` as pair count and adjust API/docs consistently. Do not silently discard odd paths.
 5. Reject non-finite inputs as specified for BSM validation; test this public entry point too.
 6. Add European binomial-vs-Monte-Carlo agreement test required by PRD §8. Use discounted-stock control `X=e^{-rT}S_T` with known mean `S e^{-qT}` as the valid control variate; clarify this choice against PRD's ambiguous phrase “closed-form price as the control.”
+
+## Gap audit round 2 (2026-11-18) — status of the 2026-11-16 items
+1. Antithetic SE over pair means — **done**: pair means are the independent units for Y and X; β from paired observations.
+2. Seed-spread regression — **done**: 30 fixed seeds, ratio bounds 0.8–1.25.
+3. Degenerate control — **done**: zero-variance control skipped, returns (price, 0.0); tested at T = 0.
+4. Sample count contract — **done**: `paths >= 2` required; antithetic requires even count (explicit error, no silent discard).
+5. Non-finite input rejection — **done** (delegates to `_validate`; NaN spot test).
+6. Binomial-vs-MC agreement — **done** (`TestBinomialCrossCheck`).
+
+All six 2026-11-16 items closed; no round-2 work for this task.
