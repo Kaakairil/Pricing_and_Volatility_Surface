@@ -15,6 +15,8 @@ tests inject a ``rules`` dict directly to prove thresholds are not hardcoded.
 
 from __future__ import annotations
 
+import math
+
 import pandas as pd
 
 from volsurf.config_io import get_cleaning_rules
@@ -72,6 +74,9 @@ def clean(
     if rules is None:
         rules = get_cleaning_rules()  # production: config/cleaning.yaml
     merged = {**get_cleaning_rules(), **rules}
+
+    if not (isinstance(spot, (int, float)) and math.isfinite(spot) and spot > 0):
+        raise ValueError(f"spot must be a finite positive number, got {spot!r}")
 
     df = _validate_input(df.copy(deep=True))
 

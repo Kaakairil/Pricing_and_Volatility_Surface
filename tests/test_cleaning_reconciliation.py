@@ -118,3 +118,11 @@ class TestCleanReconciliation:
         )
         assert len(cleaned) == 0
         assert log["removed"].iloc[3] == 1
+
+
+class TestSpotValidation:
+    @pytest.mark.parametrize("bad", [float("nan"), float("inf"), 0.0, -100.0])
+    def test_rejects_nonpositive_or_nonfinite_spot(self, bad):
+        df = _chain(_row())
+        with pytest.raises(ValueError, match="spot"):
+            clean(df, spot=bad, rules=_rules(), snapshot_date=SNAPSHOT_DATE)
