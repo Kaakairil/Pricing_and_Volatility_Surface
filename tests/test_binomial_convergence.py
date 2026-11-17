@@ -11,6 +11,10 @@ import pytest
 from volsurf.binomial import binomial_price
 from volsurf.bsm import black_scholes
 
+# Representative subset of the PRD §9.1 grid (plan-03 item 5): one ATM and
+# one OTM for each side, spanning time (0.08 / 0.25 / 0.5 / 1.0y), vol
+# (0.1-0.4), and dividend (0-2%). The full spot × moneyness × maturity ×
+# volatility cross-product is what the Greeks finite-difference test exercises.
 GRID = [
     (100, 100, 1.0, 0.2, 0.05, 0.02),
     (100, 110, 0.25, 0.4, 0.03, 0.0),
