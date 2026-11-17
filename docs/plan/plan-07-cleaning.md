@@ -52,6 +52,8 @@ same counts from the committed snapshot; thresholds provably come from the YAML.
    strike, but not `spot` — a NaN or non-positive spot silently makes the
    moneyness mask all-False and drops every row (violates the "no silent
    NaN" standard). Validate `spot` finite and > 0; test.
+   **done** — `clean` raises `ValueError` for non-finite / non-positive spot;
+   `TestSpotValidation` parametrized over nan/inf/0/negative.
 2. **`compute_tte` unused by `clean`:** step 5 inlines the day difference
    while `compute_tte` exists for the same thing. Acceptable duplication for
    the mask (needs days, not years) — noted, no change.

@@ -31,7 +31,7 @@ Tests green; coverage of `bsm.py` ≥ 95%; ruff clean.
 
 ## Gap audit round 2 (2026-11-18) — status of the 2026-11-16 items
 1. Finite input validation — **done**: `_validate` rejects NaN/±inf; parametrized tests per field.
-2. Volatility bounds — **partial**: `_MAX_SIGMA = 5.0` documented in code, but only 6.0 tested. Add a boundary test: σ = 5.0 accepted, just above rejected.
+2. Volatility bounds — **done**: `TestMaxSigmaBoundary` — σ = 5.0 accepted, σ = 5.01 rejected (`ValueError: ceiling`).
 3. FD grid defect — **done**: tests generate `K = m*S`.
 4. `test_math_imported` — **done**: removed.
 5. Greek units in docstrings — **done**.
