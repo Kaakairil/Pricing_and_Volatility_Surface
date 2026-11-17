@@ -5,8 +5,12 @@ VolSurf — SPY options pricing library + volatility-surface report.
 ## Quick start
 
 ```bash
-.venv/Scripts/python -m pip install -e ".[dev]"
+.venv/Scripts/python -m pip install -e ".[dev]" -c constraints.txt
 ```
+
+`constraints.txt` pins the exact direct-dependency versions the library was
+developed and tested against (see plan-01); drop the `-c constraints.txt` to
+float within the `pyproject.toml` ranges.
 
 ### Direct commands (Windows, no `make` required)
 

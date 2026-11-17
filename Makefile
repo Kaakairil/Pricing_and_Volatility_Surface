@@ -3,8 +3,8 @@
 PYTHON ?= .venv/Scripts/python.exe
 PIP ?= .venv/Scripts/pip.exe
 
-setup:            ## create venv + install package editable
-	$(PYTHON) -m pip install -e ".[dev]"
+setup:            ## create venv + install package editable (pinned)
+	$(PYTHON) -m pip install -e ".[dev]" -c constraints.txt
 
 test:             ## run tests (no network) with coverage gate
 	$(PYTHON) -m pytest -m "not network" --cov=volsurf --cov-report=term-missing
