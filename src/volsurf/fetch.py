@@ -64,6 +64,7 @@ def main() -> None:
         "snapshot_date": snapshot_date,
         "fetch_time_utc": fetch_time_utc,
         "spot": float(spot),
+        "spot_source": "yfinance regularMarketPrice at fetch_time_utc (no quote timestamp exposed)",
         "rate_value": float(rate),
         "rate_source": f"FRED DTB3 {dtb3_date}",
         "rate_tenor_days": 91,
