@@ -125,3 +125,13 @@ class TestFiniteInputValidation:
     def test_rejects_implausibly_large_volatility(self):
         with pytest.raises(ValueError):
             black_scholes(100, 100, 1.0, 6.0, 0.05, 0.02, "call")
+
+
+class TestMaxSigmaBoundary:
+    def test_sigma_at_ceiling_accepted(self):
+        v = black_scholes(100, 100, 0.25, 5.0, 0.05, 0.02, "call")
+        assert v > 0
+
+    def test_sigma_above_ceiling_rejected(self):
+        with pytest.raises(ValueError, match="ceiling"):
+            black_scholes(100, 100, 0.25, 5.01, 0.05, 0.02, "call")
