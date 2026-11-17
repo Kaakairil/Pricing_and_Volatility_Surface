@@ -27,20 +27,26 @@ def _price_bound(
 ) -> tuple[float, float]:
     """(lower, upper) no-arbitrage bounds on the option price for sigma >= 0.
 
-    lower: discounted intrinsic value (style-independent);
-    upper: the limit sigma -> infinity (equivalently T -> infinity).
+    lower: the higher of the discounted European intrinsic and (American
+    only) the undiscounted intrinsic — early exercise makes an American
+    option worth at least max(S-K, 0) / max(K-S, 0) right now;
+    upper: the limit sigma -> infinity (equivalently T -> infinity):
+      - European: S e^{-qT} (calls) / K e^{-rT} (puts);
+      - American: S (calls) / K (puts) via dominance — the option can never
+        exceed the raw underlying (call) or the strike (put), regardless of T.
     """
-    lower = (
+    eu_lower = (
         max(S * math.exp(-q * T) - K * math.exp(-r * T), 0.0)
         if option == "call"
         else max(K * math.exp(-r * T) - S * math.exp(-q * T), 0.0)
     )
-    if option == "call":
-        upper = S * math.exp(-q * T)
-    elif style == "american":
-        upper = K  # an American put is worth at most its strike (exercise now)
-    else:  # european put
-        upper = K * math.exp(-r * T)
+    if style == "american":
+        intrinsic = max(S - K, 0.0) if option == "call" else max(K - S, 0.0)
+        lower = max(eu_lower, intrinsic)
+        upper = S if option == "call" else K
+    else:
+        lower = eu_lower
+        upper = S * math.exp(-q * T) if option == "call" else K * math.exp(-r * T)
     return float(lower), float(upper)
 
 
