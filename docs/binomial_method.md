@@ -28,6 +28,8 @@ backward step is an array slice + multiply — no per-node `exp`.
 
 Measured on this machine (Python 3.12, Windows 11):
 
-- 1000-step American call, one price: **~25 ms** (10-run average).
+- 1000-step American call, one price: **~25 ms** (10-run average). The
+  plan-03 target was < 10 ms; that target is **not met** — 25 ms is the
+  recorded, superseding number (task-03 gap audit, 2026-11-18).
 - Reference 10,000-step American price (used only in the convergence test,
   marked slow): dominates the binomial test runtime.
