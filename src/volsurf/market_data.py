@@ -42,6 +42,11 @@ def fetch_chain(ticker: str) -> tuple[DataFrame, float, str]:
             df = getattr(chain, opt).copy()
             df["option"] = opt[:-1]  # "call" / "put"
             df["expiry"] = expiry
+            # Yahoo's impliedVolatility is a vendor Black-Scholes inversion:
+            # keep it under yf_iv (never read by our calcs) so it can't be
+            # mistaken for VolSurf's own output (plan-06 item 1).
+            if "impliedVolatility" in df.columns:
+                df = df.rename(columns={"impliedVolatility": "yf_iv"})
             pages.append(df)
     df = pd.concat(pages, ignore_index=True)
     fetch_time_utc = str(_dt.datetime.now(_dt.UTC).isoformat())
@@ -69,7 +74,14 @@ def save_snapshot(options_df: DataFrame, meta: dict, out_dir) -> Path:
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    date = meta.get("snapshot_date", "none")
+    snapshot_date = meta.get("snapshot_date")
+    fetch_date = str(meta.get("fetch_time_utc", ""))[:10]
+    if snapshot_date is not None and fetch_date and snapshot_date != fetch_date:
+        raise ValueError(
+            f"snapshot_date {snapshot_date!r} does not match fetch_time_utc "
+            f"date {fetch_date!r} (a fetch crossing UTC midnight would be mislabeled)"
+        )
+    date = snapshot_date or "none"
     name = f"spy_{date}"
     csv_path = out_dir / f"{name}.csv"
     options_df.to_csv(csv_path, index=False)
