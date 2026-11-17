@@ -7,6 +7,7 @@ against a small synthetic chain.
 
 import json
 import math
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -75,6 +76,40 @@ class TestSaveLoadRoundTrip:
         csv_file.write_bytes(data)
         with pytest.raises(ValueError, match="checksum"):
             load_snapshot(path)
+
+    @pytest.mark.parametrize(
+        "fetch_time, snapshot_date",
+        [
+            ("2026-11-16T21:00:05+00:00", "2026-11-16"),  # matching -> ok
+            ("2026-11-16T21:00:05+00:00", "2026-11-17"),  # mismatch -> error
+        ],
+    )
+    def test_snapshot_date_must_match_fetch_time(self, chain, tmp_path, fetch_time, snapshot_date):
+        # plan-06 item 3: a fetch that crosses UTC midnight would be filed
+        # under the wrong date; fail loudly instead of mislabeling.
+        meta = {"ticker": "SPY", "snapshot_date": snapshot_date, "fetch_time_utc": fetch_time}
+        if snapshot_date == fetch_time[:10]:
+            path = save_snapshot(chain, meta, tmp_path)
+            assert path.exists()
+        else:
+            with pytest.raises(ValueError, match="snapshot_date"):
+                save_snapshot(chain, meta, tmp_path)
+
+
+class TestCommittedSnapshotReload:
+    def test_committed_snapshot_loads_and_reconciles(self):
+        # plan-06 item 2: the committed snapshot must stay loadable offline
+        # (checksum + metadata) — guards accidental schema/metadata drift.
+        path = Path(__file__).resolve().parents[1] / "data" / "snapshots" / "spy_2026-11-16.csv"
+        if not path.exists():
+            pytest.skip("committed snapshot not present in this checkout")
+        df, meta = load_snapshot(path)
+        assert len(df) == meta["row_counts"]["total"]
+        assert (df["option"] == "call").sum() == meta["row_counts"]["calls"]
+        assert (df["option"] == "put").sum() == meta["row_counts"]["puts"]
+        assert df["expiry"].nunique() == meta["row_counts"]["expiries"]
+        assert meta["spot"] > 0
+        assert meta["fetch_time_utc"][:10] == meta["snapshot_date"]
 
 
 class TestRates:
