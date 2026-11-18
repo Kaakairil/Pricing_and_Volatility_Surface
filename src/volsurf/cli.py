@@ -14,6 +14,13 @@ Commands implemented so far (matching the Makefile targets that exist today):
 
     python -m volsurf.cli arbitrage <snapshot.csv> [-o results/]
         Compare raw and cleaned American option quotes offline.
+
+    python -m volsurf.cli surface <snapshot.csv> [-o results/]
+        Build the implied-volatility surface offline. Cleans the snapshot,
+        inverts mids to American + Black-Scholes IV, interpolates over
+        (log-moneyness, time-to-expiry), and writes iv_table.csv, the
+        calendar diagnostic, and the surface figures. Missing rate/dividend
+        metadata falls back to zero (documented in the write-up).
 """
 
 from __future__ import annotations
@@ -71,6 +78,73 @@ def cmd_clean(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_surface(args: argparse.Namespace) -> int:
+    """Clean snapshot, invert IV (American + BS), build surface + figures."""
+    import pandas as pd
+
+    from volsurf.cleaning import clean
+    from volsurf.config_io import ROOT, get_cleaning_rules
+    from volsurf.market_data import load_snapshot
+    from volsurf.plots import (
+        plot_iv_american_vs_bs,
+        plot_smiles,
+        plot_surface_3d,
+        plot_term_structure,
+    )
+    from volsurf.surface import (
+        build_surface,
+        calendar_diagnostic,
+        compute_iv_table,
+    )
+
+    try:
+        df, meta = load_snapshot(args.input)
+        meta = meta or {}
+        spot = float(meta.get("spot", 0.0))
+        r = float(meta.get("rate_value", 0.0))
+        q = float(meta.get("dividend_yield", 0.0))
+        date = str(meta.get("snapshot_date", ""))
+        cleaned, _ = clean(
+            df,
+            spot,
+            rules=get_cleaning_rules(ROOT / "config"),
+            snapshot_date=date or None,
+        )
+        cleaned = cleaned.dropna(subset=["mid", "tte"])
+        american = compute_iv_table(cleaned, spot, r, q, style="american", steps=100)
+        european = compute_iv_table(cleaned, spot, r, q, style="european")
+        key = ["strike", "tte", "option"]
+        iv_table = american.merge(
+            european[key + ["iv"]].rename(columns={"iv": "european"}),
+            on=key,
+            how="left",
+        ).rename(columns={"iv": "american"})
+
+        out = Path(args.output)
+        out.mkdir(parents=True, exist_ok=True)
+        iv_table = iv_table.assign(iv=iv_table["american"])
+        iv_table.to_csv(out / "iv_table.csv", index=False)
+
+        surface_in = iv_table[["k", "tte", "american"]].rename(columns={"american": "iv"})
+        grid, method = build_surface(surface_in)
+        grid.to_csv(out / "iv_surface.csv", index=False)
+        method_csv = {
+            k: v for k, v in method.items() if k != "interpolator"
+        }  # not JSON-serializable
+        pd.DataFrame([method_csv]).to_csv(out / "surface_method.csv", index=False)
+        calendar_diagnostic(surface_in).to_csv(out / "calendar_diagnostic.csv", index=False)
+
+        fig_dir = out / "surface"
+        plot_smiles(iv_table, fig_dir)
+        plot_term_structure(grid, fig_dir)
+        plot_surface_3d(grid, fig_dir)
+        plot_iv_american_vs_bs(iv_table, fig_dir)
+    except (OSError, ValueError, TypeError) as exc:
+        _fail(str(exc))
+    print(f"surface -> {out / 'iv_table.csv'}, figures -> {fig_dir}")
+    return 0
+
+
 def cmd_arbitrage(args: argparse.Namespace) -> int:
     """Write raw and cleaned quote diagnostics for one local snapshot."""
     import pandas as pd
@@ -117,6 +191,11 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("input", help="snapshot CSV (data/snapshots/spy_<date>.csv)")
     a.add_argument("-o", "--output", default="results", help="output dir (default results/)")
     a.set_defaults(handler=cmd_arbitrage)
+
+    s = sub.add_parser("surface", help="build the implied-volatility surface offline")
+    s.add_argument("input", help="snapshot CSV (data/snapshots/spy_<date>.csv)")
+    s.add_argument("-o", "--output", default="results", help="output dir (default results/)")
+    s.set_defaults(handler=cmd_surface)
 
     f = sub.add_parser("fetch", help="manual live snapshot fetch (network)")
     f.set_defaults(handler=cmd_fetch)
