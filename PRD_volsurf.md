@@ -110,12 +110,12 @@ Applied in order, with each rule's removal count recorded:
 
 ### 6.6 No-Arbitrage Checks
 
-Run on the cleaned data, with violation counts reported:
+Run quote-level checks before and after cleaning. Report eligible comparisons, midpoint flags, and flags that persist across the quoted bid-ask intervals. A flag does not establish executable arbitrage.
 
-- **Put-call parity:** C - P should equal S e^{-qT} - K e^{-rT}, within a tolerance set by the bid-ask spread.
+- **Put-call parity:** European model prices use equality. Matched American SPY quotes use the interval `[S exp(-qT) - K, S - K exp(-rT)]`, assuming nonnegative constant rates and proportional dividend yield.
 - **Monotonicity in strike:** call prices decrease in strike; put prices increase in strike.
-- **Convexity in strike (butterfly):** call prices are convex in strike.
-- **Calendar monotonicity:** total variance (IV squared times T) is non-decreasing in maturity at fixed moneyness.
+- **Convexity in strike (butterfly):** call prices are convex in strike; account for unequal strike spacing.
+- **Calendar diagnostic:** after IV construction, compare total variance (IV squared times T) across comparable, supported maturities at fixed moneyness. Treat decreases in American IV total variance as model-dependent warnings.
 
 ### 6.7 Volatility Surface
 
