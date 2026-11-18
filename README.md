@@ -35,6 +35,9 @@ float within the `pyproject.toml` ranges.
 # quote diagnostics: raw + cleaned side by side -> results/arbitrage_report.csv
 .venv/Scripts/python -m volsurf.cli arbitrage data/snapshots/spy_<date>.csv -o results
 
+# volatility surface: iv_table.csv, iv_surface.csv, calendar_diagnostic.csv, figures
+.venv/Scripts/python -m volsurf.cli surface data/snapshots/spy_<date>.csv -o results
+
 # MANUAL live snapshot fetch (network, market hours)
 .venv/Scripts/python -m volsurf.cli fetch
 ```
@@ -42,6 +45,12 @@ float within the `pyproject.toml` ranges.
 The arbitrage command screens American parity bounds, strike monotonicity,
 and call convexity per expiry; `docs/american_parity_bounds.md` explains the
 bounds and how to read the flags. Flags are diagnostics, not trade signals.
+
+The surface command inverts cleaned mids to American + Black-Scholes IV,
+fits a C0 `LinearNDInterpolator` over (log-moneyness, maturity), and writes
+the IV table, surface grid, calendar diagnostic, and figures
+(`docs/surface_method.md` explains the interpolation, the 100-step American
+choice, and how to read the outputs).
 
 ### Makefile targets (optional — needs GNU make)
 
