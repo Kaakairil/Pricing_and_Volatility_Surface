@@ -66,7 +66,7 @@ def _american_sigma_floor(T: float, steps: int, r: float, q: float) -> float:
     """
     if T <= 0.0:
         return SIGMA_LO
-    return 1.001 * abs(r - q) * math.sqrt(T / steps)
+    return max(SIGMA_LO, 1.001 * abs(r - q) * math.sqrt(T / steps))
 
 
 def _objective_american(
