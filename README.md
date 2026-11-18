@@ -26,6 +26,23 @@ float within the `pyproject.toml` ranges.
 .venv/Scripts/ruff format --check src tests
 ```
 
+### CLI
+
+```bash
+# clean a snapshot (PRD §6.5) -> results/cleaned_<date>.csv + cleaning report
+.venv/Scripts/python -m volsurf.cli clean data/snapshots/spy_<date>.csv -o results
+
+# quote diagnostics: raw + cleaned side by side -> results/arbitrage_report.csv
+.venv/Scripts/python -m volsurf.cli arbitrage data/snapshots/spy_<date>.csv -o results
+
+# MANUAL live snapshot fetch (network, market hours)
+.venv/Scripts/python -m volsurf.cli fetch
+```
+
+The arbitrage command screens American parity bounds, strike monotonicity,
+and call convexity per expiry; `docs/american_parity_bounds.md` explains the
+bounds and how to read the flags. Flags are diagnostics, not trade signals.
+
 ### Makefile targets (optional — needs GNU make)
 
 | target  | purpose                                              |
