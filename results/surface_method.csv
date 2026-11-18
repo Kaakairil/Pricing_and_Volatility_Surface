@@ -1,0 +1,2 @@
+method,input_rows,dropped_nan,n_points,col_count,k_min,k_max
+LinearNDInterpolator,3575,181,3394,3575,-0.35300595728034917,0.26166960783810095
