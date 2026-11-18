@@ -16,6 +16,7 @@ htmlcov/
 # data + results (snapshots and results CSVs ARE committed; raw + figures are not)
 data/raw/
 results/figures/
+results/surface/
 
 # superpowers scratch
 .superpowers/
