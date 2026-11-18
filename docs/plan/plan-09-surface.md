@@ -17,7 +17,7 @@
    - Insufficient data (< 5 strikes in a slice) raises clear error or skips with log entry.
    - Out-of-hull grid points are NaN — never extrapolate silently.
 2. Implement: k = ln(K/S); `scipy.interpolate.LinearNDInterpolator` on (k, T). Document that linear is C0 — no smoothness/no-arbitrage guarantee (addressed by Task 08 surface check).
-3. Term structure: IV at fixed k across expiries, interpolated from surface.
+3. Term structure: IV at fixed k across expiries, interpolated from surface. Own the post-IV calendar diagnostic: compare total variance on comparable supported points; label decreases in American IV total variance as model-dependent warnings, not executable arbitrage.
 4. Generate all figures from cleaned snapshot. Include American-vs-Black-Scholes IV comparison — most distinctive figure.
 5. `docs/surface_method.md`.
 
