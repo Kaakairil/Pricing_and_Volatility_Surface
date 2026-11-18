@@ -1,30 +1,22 @@
-# Task 08: No-Arbitrage Checks (American-aware)
+# Task 08: American Option Quote Diagnostics
 
-**Source:** Master Plan Part E Task 08 (Review B.1) | Implements: FR-8
+**Source:** PRD §6.6, §8.4, RQ4; implements quote-level FR-8 checks. Task 09 owns post-IV calendar diagnostics.
 
-## Key correction (B.1)
-Put-call parity is an equality only for European options. SPY is American → use American parity **bounds**, not the equality.
+## Scope
 
-## Files
-- Create: `src/volsurf/arbitrage.py`, `tests/test_arbitrage_checks.py`, `docs/american_parity_bounds.md`
-
-## Interfaces
-- `run_checks(df, spot, r, q, tol) -> DataFrame` — columns: check, expiry, violations, sample
-- `implied_forward(df, expiry, r, T) -> (forward, n_pairs)`
+Compare raw and cleaned quotes from the same checksum-verified SPY snapshot. Use snapshot spot, date, rate, and dividend yield; no live data or substituted inputs. Assume one underlying and homogeneous contracts. Require positive maturity and strike, known option side, and finite `0 < bid <= ask`. Exclude all occurrences of ambiguous duplicate `(expiry, strike, option)` keys. Adjacency uses retained strikes only.
 
 ## Checks
-1. **Put-call parity (American bounds):** conservative pair S e^{−qT} − K ≤ C − P ≤ S − K e^{−rT}. **Validate bounds numerically against the binomial pricer on synthetic data before use.** Never the European equality.
-2. **Strike monotonicity:** per expiry, call mids ↓ in K, put mids ↑ in K.
-3. **Convexity (butterfly):** per expiry, call mids convex in K — second difference across three adjacent strikes ≥ 0, tolerance = half bid-ask spread at middle strike.
-4. **Calendar monotonicity:** at fixed log-moneyness k, total variance w = IV²·T nondecreasing in T; interpolate IV at fixed k across expiries first.
-5. **Forward consistency (extra):** parity-implied forward ≈ S e^{(r−q)T} within tolerance; report implied q per expiry as dividend cross-check.
 
-## Steps
-1. **Tests first** — synthetic chains with one planted violation per check; each flags its violation; clean chain passes.
-2. Test American parity bounds on binomial-priced synthetic chains — all bounds must hold for tree prices; document any failure.
-3. Implement per-expiry; pair calls/puts by strike.
-4. Run before (raw) and after (cleaned) cleaning; write `results/arbitrage_report.csv` side by side.
-5. Report violation counts + samples honestly; residual violations after cleaning are a finding.
+- **American put–call bounds:** match calls and puts by expiry and strike. With nonnegative constant `r` and `q`, compare `Cmid-Pmid` and `[Cbid-Pask, Cask-Pbid]` against `[S exp(-qT)-K, S-K exp(-rT)]`. A spread-robust flag requires disjoint intervals. Do not infer exact forwards or dividends from this band.
+- **Strike monotonicity:** check neighboring retained strikes per expiry and side. Calls should not rise and puts should not fall as strike increases. A spread-robust flag requires a breach even at the most favorable bid/ask endpoints.
+- **Call convexity:** compare the middle price against the strike-distance-weighted outer prices. For spread-robust flags, compare middle bid with weighted outer asks.
 
-## Exit criteria
-Planted-violation tests green; American bounds validated; report written.
+Use an absolute price tolerance (`1e-8` by default); boundary contact is not a breach. Flags are local diagnostics, not claims about synchronized prices or executable arbitrage. Compare rates as well as counts: cleaning changes eligibility and adjacency.
+
+## Implementation and exit criteria
+
+1. Test synthetic clean and violating chains, American CRR bounds, nonuniform strikes, eligibility, group isolation, and the CLI before implementing.
+2. Add `run_checks(df, spot, r, q, snapshot_date, tol=1e-8)` in `src/volsurf/arbitrage.py`.
+3. Add offline `python -m volsurf.cli arbitrage <snapshot.csv> [-o results]`. Write `results/arbitrage_report.csv` with stage, expiry, check, input/eligible quotes, tested comparisons, midpoint/spread-robust flags, and sample strikes. Zero tested means no evidence for that check.
+4. Document assumptions in `docs/american_parity_bounds.md`. Verify deterministic output on the frozen snapshot and run offline tests and Ruff.
