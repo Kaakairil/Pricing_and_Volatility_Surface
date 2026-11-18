@@ -12,8 +12,8 @@ Commands implemented so far (matching the Makefile targets that exist today):
         Manual live snapshot fetch (network, market hours). Equivalent to
         ``python -m volsurf.fetch``.
 
-Later commands (arbitrage, surface, report) attach here as their modules
-land in Tasks 08-12.
+    python -m volsurf.cli arbitrage <snapshot.csv> [-o results/]
+        Compare raw and cleaned American option quotes offline.
 """
 
 from __future__ import annotations
@@ -71,6 +71,38 @@ def cmd_clean(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_arbitrage(args: argparse.Namespace) -> int:
+    """Write raw and cleaned quote diagnostics for one local snapshot."""
+    import pandas as pd
+
+    from volsurf.arbitrage import run_checks
+    from volsurf.cleaning import clean
+    from volsurf.config_io import ROOT, get_cleaning_rules
+    from volsurf.market_data import load_snapshot
+
+    keys = ("spot", "rate_value", "dividend_yield", "snapshot_date")
+    try:
+        df, meta = load_snapshot(args.input)
+        if missing := [key for key in keys if key not in meta]:
+            raise ValueError(f"Missing snapshot metadata: {', '.join(missing)}")
+        raw = run_checks(df, *(meta[key] for key in keys))
+        cleaned, _ = clean(
+            df,
+            meta["spot"],
+            rules=get_cleaning_rules(ROOT / "config"),
+            snapshot_date=meta["snapshot_date"],
+        )
+        filtered = run_checks(cleaned, *(meta[key] for key in keys))
+        report = pd.concat([raw.assign(stage="raw"), filtered.assign(stage="cleaned")])
+        output = Path(args.output) / "arbitrage_report.csv"
+        output.parent.mkdir(parents=True, exist_ok=True)
+        report.to_csv(output, index=False, columns=["stage", *raw.columns])
+    except (OSError, ValueError, TypeError) as exc:
+        _fail(str(exc))
+    print(f"quote diagnostics -> {output}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="python -m volsurf.cli", description=__doc__)
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
@@ -80,6 +112,11 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("input", help="snapshot CSV (data/snapshots/spy_<date>.csv)")
     c.add_argument("-o", "--output", default="results", help="output dir (default results/)")
     c.set_defaults(handler=cmd_clean)
+
+    a = sub.add_parser("arbitrage", help="screen raw and cleaned American option quotes")
+    a.add_argument("input", help="snapshot CSV (data/snapshots/spy_<date>.csv)")
+    a.add_argument("-o", "--output", default="results", help="output dir (default results/)")
+    a.set_defaults(handler=cmd_arbitrage)
 
     f = sub.add_parser("fetch", help="manual live snapshot fetch (network)")
     f.set_defaults(handler=cmd_fetch)
