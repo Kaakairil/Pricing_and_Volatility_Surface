@@ -126,3 +126,20 @@ class TestSpotValidation:
         df = _chain(_row())
         with pytest.raises(ValueError, match="spot"):
             clean(df, spot=bad, rules=_rules(), snapshot_date=SNAPSHOT_DATE)
+
+
+class TestCrossedQuotes:
+    def test_crossed_quote_dropped_in_step_1(self):
+        # A crossed quote (bid > ask) is not a valid two-sided quote: the
+        # arbitrage module already treats it as ineligible, and its "mid"
+        # is not a meaningful price. Cleaning must drop it.
+        df = _chain(_row(bid=12.0, ask=10.0), _row())
+        cleaned, log = clean(df, spot=100.0, rules=_rules(), snapshot_date=SNAPSHOT_DATE)
+        assert len(cleaned) == 1
+        assert log["removed"].iloc[0] == 1
+
+    def test_zero_spread_kept(self):
+        # bid == ask (locked market) is not crossed; keep it.
+        df = _chain(_row(bid=10.0, ask=10.0))
+        cleaned, _ = clean(df, spot=100.0, rules=_rules(), snapshot_date=SNAPSHOT_DATE)
+        assert len(cleaned) == 1
