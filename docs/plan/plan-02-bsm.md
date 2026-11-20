@@ -35,3 +35,9 @@ Tests green; coverage of `bsm.py` ≥ 95%; ruff clean.
 3. FD grid defect — **done**: tests generate `K = m*S`.
 4. `test_math_imported` — **done**: removed.
 5. Greek units in docstrings — **done**.
+
+## Gap audit round 3 (2026-11-20) — re-check
+No new gaps. All five 2026-11-18 items verified closed in code (validation,
+σ ceiling 5.0, FD grid, removed stale test, units). `black_scholes` T = 0 /
+σ = 0 degenerate branches match the intrinsic limits; Greeks share the same
+validation path. No open items for this task.
