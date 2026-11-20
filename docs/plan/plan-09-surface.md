@@ -23,6 +23,23 @@ American-vs-BS figures under `results/surface/`. Calendar diagnostic:
 712 warnings / 3,108 comparisons (model-dependent, not executable).
 Deterministic repeat verified (byte-identical `iv_table.csv`).
 
+## Gap audit round 3 (2026-11-20) — findings in this task's own code
+
+1. **`plot_term_structure` reads the grid, not IVs (cosmetic, open).** The
+   term-structure figure interpolates IV at k = 0 from the fitted grid; grid
+   points near the short-T edge are often NaN (out-of-hull), so the leftmost
+   part of the curve can be missing. Acceptable — never extrapolates — but
+   worth a sentence in the report when presenting it.
+2. **RQ3 skew is reported only implicitly (open → Task 12).** PRD §9.3 asks
+   the report to state the observed skew (IV difference between low and
+   high strikes at a fixed expiry). No artifact computes it; from the
+   committed table it is ≈ +0.08 IV (0.244 left vs 0.158 right at the
+   longest expiry). Task 12's report should compute and cite it — no new
+   module needed, a line in `report/report.md`.
+3. **Calendar warnings are numerous (712 / 3,108).** Consistent with the
+   §6.6 model-dependent framing; the report must present the *rate*, not
+   the raw count, and remind that adjacent-strike noise inflates it.
+
 ## Original brief (kept for reference)
 
 
