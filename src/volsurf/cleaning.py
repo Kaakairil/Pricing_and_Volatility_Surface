@@ -1,7 +1,7 @@
 """Option-chain cleaning (PRD §6.5): threshold filters + mid transformation.
 
 Pipeline order (each step logs how many rows it removed):
-  1. non-positive quotes (bid <= 0 or ask <= 0, NaN counts as removed)
+  1. invalid quotes: bid or ask <= 0, crossed (bid > ask), or NaN
   2. relative bid/ask spread > ``max_spread_pct_of_mid``
   3. mid = (bid + ask) / 2  (transform, removes nothing)
   4. liquidity: openInterest >= ``min_open_interest`` and volume >= ``min_volume``
@@ -88,8 +88,11 @@ def clean(
         log.loc[idx, "removed"] = removed
         return df.loc[mask]
 
-    # 1. non-positive quotes (zero bid OR zero ask are both untradeable)
-    q = (df["bid"] > 0) & (df["ask"] > 0)
+    # 1. non-positive quotes (zero bid OR zero ask are both untradeable);
+    #    crossed quotes (bid > ask) are invalid two-sided quotes too — the
+    #    arbitrage module treats them as ineligible, and their mid is not a
+    #    meaningful price. A locked market (bid == ask) is kept.
+    q = (df["bid"] > 0) & (df["ask"] >= df["bid"])
     # NaN in quote columns means no quote -> remove
     q = q & df["bid"].notna() & df["ask"].notna()
     df = _drop(q, 0)
