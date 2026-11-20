@@ -52,3 +52,10 @@ Unit tests green; one snapshot committed with checksum + metadata; `config/marke
    metadata; limitation documented here.
 6. **Task 05 dependency:** deep-ITM American bounds fix belongs to plan-05;
    see that file's gap audit (2026-11-18).
+
+## Gap audit round 3 (2026-11-20) — re-check
+No new gaps. Checksum verify on load, snapshot-date/fetch-date consistency
+guard, `yf_iv` rename (vendor IV quarantined), and `spot_source` provenance
+all verified in code. One usage-level note (owned by plan-07): callers that
+invoke `get_cleaning_rules()` without an explicit config dir read defaults
+instead of the YAML — see plan-07 round 3. No open items for this task.
