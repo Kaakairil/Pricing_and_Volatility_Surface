@@ -36,11 +36,12 @@ DEFAULT_CLEANING_RULES = {
 def get_cleaning_rules(config_dir: str | Path | None = None) -> dict:
     """Load the six cleaning thresholds from ``config/cleaning.yaml``.
 
+    With no argument the committed ``ROOT / "config"`` directory is used.
     Returns a dict with exactly the ``CLEANING_KEYS``.  A missing key or a
     non-numeric value falls back to the default for that key, so a partial or
     hand-edited config never crashes the pipeline.
     """
-    path = Path(config_dir or ROOT) / "cleaning.yaml"
+    path = Path(config_dir or ROOT / "config") / "cleaning.yaml"
     rules = dict(DEFAULT_CLEANING_RULES)
     if path.exists():
         loaded = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
