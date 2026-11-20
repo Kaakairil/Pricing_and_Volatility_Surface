@@ -17,6 +17,35 @@ TDD (tests first, `tests/test_svi.py` — 11 tests, RED watched first):
   RMSE in IV 0.004–0.008, all butterfly-clean (min_g ≥ 0.32).
   Outputs: `results/svi_fit.csv`, `results/surface/svi_vs_interpolated.png`.
 
+## Gap audit round 3 (2026-11-20) — findings in this task's own code
+
+1. **`tests/test_svi.py` hardcodes an absolute path — FIXED (2026-11-20).**
+   The `TestOnSnapshotData` fixture reads
+   `D:/Kuliah/Hackathon/Options pricing and volatility surface/results/iv_table.csv`
+   (test_svi.py:120). Breaks the Task 12 clean-clone test (step 7) and any
+   other checkout location. Fix: resolve `results/` relative to the repo root
+   via `pathlib.Path(__file__).resolve().parents[1] / "results"` and
+   `pytest.skip` when the file is absent (results CSVs are committed, so the
+   skip should never fire in the real clone). **Fix applied:**
+   `RESULTS = Path(__file__).resolve().parents[1] / "results" /
+   "iv_table.csv"` + `pytest.skip` guard; suite green.
+2. **Raw-SVI parameter identification on one-sided k-data (documented, not a
+   code bug).** Two of three fitted slices converge to the |rho| = 0.99
+   bound with b ≈ 21–23: the observed k-range is mostly OTM puts
+   (k ∈ [−0.353, 0.262]), so many (b, rho, m, sigma) combinations produce
+   nearly the same curve. The fitted curve is reliable (RMSE in IV
+   0.004–0.008, butterfly-clean); the individual parameters are not
+   interpretable across slices. Written up in `docs/svi_method.md`; a
+   quasi-explicit (Zeliade) or calendar-regularized fit is the upgrade path,
+   out of scope for the stretch task.
+3. **`fit_snapshot_slices` assumes an `iv` column (caller contract).**
+   Passing the Task-09 `iv_table` as-is (which already has `iv` aliased to
+   the American column) plus a `rename(columns={"american": "iv"})` creates
+   duplicate `iv` columns and pandas raises
+   `cannot reindex on an axis with duplicate labels`. Fixed in the run
+   script by selecting `["k", "tte", "iv"]` directly; the function's
+   docstring should state the expected schema (deferred to Task 12 polish).
+
 Pre-implementation notes (plan edit first per AGENTS.md):
 - **Fit total variance `w = IV²·T`** (not IV), `scipy.optimize.least_squares`
   with hard bounds: b ≥ 0, |ρ| < 1, σ > 0, and the a + bσ√(1−ρ²) ≥ 0
