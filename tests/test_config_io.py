@@ -42,3 +42,14 @@ def test_partial_config_keeps_unset_defaults(tmp_path):
     rules = get_cleaning_rules(tmp_path)
     assert rules["min_open_interest"] == 500.0
     assert rules["min_t_days"] == 7.0  # untouched -> default
+
+
+def test_bare_call_reads_the_real_yaml_not_defaults():
+    # config_io.get_cleaning_rules() with no argument resolved ROOT (repo
+    # root) instead of ROOT/config — the YAML was never read and callers got
+    # the fallback defaults. YAML values pass through float(), so the loaded
+    # dict has float min_open_interest; the int-typed default would betray
+    # a fallback.
+    rules = get_cleaning_rules()
+    assert isinstance(rules["min_open_interest"], float)
+    assert rules == get_cleaning_rules(ROOT / "config")
