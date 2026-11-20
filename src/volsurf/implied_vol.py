@@ -43,7 +43,10 @@ def _price_bound(
     if style == "american":
         intrinsic = max(S - K, 0.0) if option == "call" else max(K - S, 0.0)
         lower = max(eu_lower, intrinsic)
-        upper = S if option == "call" else K
+        # Calls never exceed S (dominance). Puts never exceed K when r >= 0,
+        # but at r < 0 the sigma -> infinity limit is K e^{-rT} > K (holding
+        # the strike gains carry), so take the larger of the two.
+        upper = S if option == "call" else max(K, K * math.exp(-r * T))
     else:
         lower = eu_lower
         upper = S * math.exp(-q * T) if option == "call" else K * math.exp(-r * T)
@@ -151,6 +154,10 @@ def implied_volatility(
         return float("nan"), "NO-BRACKET"
     f_lo = _objective(sigma_lo, S, K, T, r, q, option, steps, style) - market_price
     f_hi = _objective(SIGMA_HI, S, K, T, r, q, option, steps, style) - market_price
+    if f_hi == 0.0:
+        # Price exactly at the sigma_hi objective: sigma == SIGMA_HI, no
+        # bracket needed (a strict `0 < f_hi` would misreport NO-BRACKET).
+        return float(SIGMA_HI), "ok"
     if f_lo < 0 < f_hi:
         # The price objective is monotone increasing, smooth, and already
         # bracketed; brentq converges quickly and accurately.
