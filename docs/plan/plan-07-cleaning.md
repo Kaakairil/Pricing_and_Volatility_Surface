@@ -58,6 +58,42 @@ same counts from the committed snapshot; thresholds provably come from the YAML.
    while `compute_tte` exists for the same thing. Acceptable duplication for
    the mask (needs days, not years) — noted, no change.
 
+## Gap audit round 3 (2026-11-20) — evidence-based re-check
+
+1. **Crossed quotes (bid > ask) survive cleaning — CONFIRMED BUG — FIXED (2026-11-20).**
+   PRD §6.5 rule 1 says "drop zero bid or ask" — it does not mention crossed
+   quotes, so the implementation is PRD-faithful, but PRD §6.6 requires
+   quote-level checks on "eligible" quotes and the arbitrage module
+   (arbitrage.py:58) treats `bid > ask` as ineligible. A crossed quote that
+   survives cleaning therefore reaches `compute_iv_table`, where
+   `mid = (bid + ask)/2` is still computed and inverted. Reproduced:
+   `clean` on a synthetic 2-row frame with bid=12 > ask=10 keeps both rows
+   (step 2's `(ask-bid)/mid` is negative, which passes the `<= max_spread`
+   test). On the committed snapshot 0 crossed quotes survive (Yahoo data is
+   uncrossed), so severity is low in practice — but the two modules disagree
+   on eligibility, and a crossed row's "mid" is not a meaningful price. Fix:
+   add `bid <= ask` to step 1's mask (a one-line change + one test), or
+   document that cleaning intentionally does not dedupe eligibility with the
+   arbitrage module. **Fix applied:** step 1 mask is now
+   `bid > 0 and ask >= bid` (locked markets kept); tests
+   `TestCrossedQuotes` green; snapshot reconciliation unchanged (0
+   crossed quotes in the committed data).
+2. **`cmd_clean` bare `get_cleaning_rules()` — CONFIRMED BUG — FIXED (2026-11-20).**
+   `config_io.get_cleaning_rules(config_dir=None)` resolves
+   `Path(ROOT) / "cleaning.yaml"` — the *repo root*, not `config/`
+   (config_io.py:43). The bare call works today only because the fallback
+   defaults in `DEFAULT_CLEANING_RULES` happen to equal the committed
+   `config/cleaning.yaml` values. Reproduced: bare call returns
+   `min_open_interest: 100` (int, from defaults) while the explicit
+   `ROOT/config` call returns `100.0` (float, from YAML) — the YAML is not
+   being read. `cmd_surface` and `cmd_arbitrage` already pass `ROOT/config`
+   explicitly; `cmd_clean` (cli.py:61) and `clean()` itself
+   (cleaning.py:75) do not. Fix: make `get_cleaning_rules` default to
+   `ROOT / "config"` (one line), which fixes all three call sites at once.
+   **Fix applied:** `get_cleaning_rules` now defaults to `ROOT / "config"`;
+   test `test_bare_call_reads_the_real_yaml_not_defaults` (float-typed
+   values prove the YAML was read, not the int-typed defaults) green.
+
 ## Result (2026-11-16 snapshot, spot 754.37)
 Raw chain: **10,354** rows (32 expiries, calls + puts).
 
