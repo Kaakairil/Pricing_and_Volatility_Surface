@@ -45,3 +45,13 @@
 
 ## Additional findings (2026-11-18)
 6. **`make all` / `figures` / `report` reference nonexistent scripts** (`scripts/run_pipeline.py`, `scripts/make_figures.py`, `scripts/make_report.py`). Expected — those are Tasks 08-12 deliverables; do not "fix" by deleting the targets. Note kept here so a fresh-clone `make all` failure is not mistaken for a defect.
+
+## Gap audit round 3 (2026-11-20) — re-check
+No new gaps. Round-2 items all closed (constraints.txt committed, wired into
+`make setup`); the round-2 note about `make all`/`figures`/`report`
+referencing nonexistent scripts still holds and is **owned by Task 12**
+(scripts/ + report/ + reproducibility test are its deliverables). The
+cross-cutting round-3 items found this pass are recorded in the source
+plans: plan-05 (negative-rate American put bound), plan-07 (crossed-quote
+eligibility + `get_cleaning_rules` ROOT default), plan-09 (skew artifact →
+Task 12 report), plan-11 (absolute path in test fixture).
