@@ -1,5 +1,7 @@
 """SVI slice fit + butterfly check (Task 11, stretch FR-10)."""
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -109,6 +111,9 @@ class TestButterfly:
         assert not ok and min_g < 0
 
 
+RESULTS = Path(__file__).resolve().parents[1] / "results" / "iv_table.csv"
+
+
 class TestOnSnapshotData:
     """Integration: fit real cleaned expiries from the committed results."""
 
@@ -116,9 +121,9 @@ class TestOnSnapshotData:
     def fits(self):
         from volsurf.svi import fit_snapshot_slices
 
-        table = pd.read_csv(
-            "D:/Kuliah/Hackathon/Options pricing and volatility surface/results/iv_table.csv"
-        )
+        if not RESULTS.exists():
+            pytest.skip(f"committed iv_table.csv not found at {RESULTS}")
+        table = pd.read_csv(RESULTS)
         ok = table[(table.reason == "ok") & table.american.notna()]
         return fit_snapshot_slices(ok, n_slices=3)
 
