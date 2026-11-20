@@ -35,3 +35,10 @@ Tests green; runtime recorded.
 3. Cross-method coverage — **done**: `TestBinomialCrossCheck` in `tests/test_montecarlo.py`, tolerance `0.01 + 3*SE`.
 4. Deterministic boundaries — **done**: `T == 0` returns intrinsic; `sigma == 0` raises a documented `ValueError` (chosen path per the audit's "or a documented validation error").
 5. Grid labeling — **done**: GRID in `tests/test_binomial_convergence.py` labelled as a representative subset of PRD §9.1 (full cross-product lives in the Greeks FD test).
+
+## Gap audit round 3 (2026-11-20) — re-check
+No new gaps. Overflow-safe European probabilities, T = 0 / σ = 0 boundary
+behavior, and cross-method agreement all verified in code and tests. The
+documented ~25 ms price (vs the master plan's <10 ms target) remains the
+recorded runtime; superseding it would need a vectorized rework (not
+warranted for this project's scale). No open items.
