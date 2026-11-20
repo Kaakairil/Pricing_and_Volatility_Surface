@@ -22,3 +22,22 @@
 
 ## Exit criteria
 Clean-clone run passes; coverage target met; report + summary written; tagged `v1.0` (Heston explicitly out of scope per PRD §16.4).
+
+## Gap audit round 3 (2026-11-20) — inputs waiting for this task
+
+Found in the plans 1–11 re-check; status after same-day fixes:
+
+1. ~~`tests/test_svi.py` absolute path~~ — FIXED 2026-11-20.
+2. **Skew artifact for RQ3** (plan-09 round 3, item 2) — PRD §9.3 skew
+   (≈ +0.08 IV left-minus-right at the longest expiry) must be computed and
+   cited in `report/report.md`.
+3. ~~Negative-rate American put bound~~ — FIXED 2026-11-20 (incl. the
+   σ = SIGMA_HI exact-price NO-BRACKET boundary defect the fix exposed).
+4. ~~`get_cleaning_rules` ROOT default~~ — FIXED 2026-11-20 (default now
+   `ROOT / "config"`; YAML actually read).
+5. **Near-expiry `0.0 < abs(iv - sigma)`** (plan-05 round 3, item 3) — allow
+   exact recovery in the test pass.
+6. **Missing deliverables this task already owns:** `scripts/run_pipeline.py`
+   (Makefile `all`), `scripts/make_figures.py`, `scripts/make_report.py`,
+   `report/report.md`, `report/summary.md`, `tests/test_reproducibility.py`,
+   clean-clone run + `results/run_metadata.json`, tag `v1.0`.
