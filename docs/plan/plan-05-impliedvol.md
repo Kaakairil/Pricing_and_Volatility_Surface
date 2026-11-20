@@ -47,3 +47,31 @@ Round-trip tests green; reason codes tested.
    already covers it) so the fixed bounds are exercised.
 3. **Record American-vs-BS IV difference column:** task step 5 lands with the
    surface task (09+); the comparison column is produced there, not here.
+
+## Gap audit round 3 (2026-11-20) — evidence-based re-check
+
+1. **Negative-rate American put upper bound — CONFIRMED BUG — FIXED (2026-11-20).**
+   `_price_bound` uses `upper = K` for American puts (implied_vol.py:46,
+   "dominance — the option can never exceed the strike"). At r < 0 this is
+   wrong: the sigma → ∞ limit of an American put is `K·e^{-r·T} > K`
+   (carry *gains* from holding the strike). Reproduced:
+   `binomial_price(100, 120, 5.0, 3.0, r=-0.02, q=0.007, put, 500 steps) =
+   132.53 > K=120` — a legitimate tree price at σ = 3.0 (the very top of the
+   bracket) — and `implied_volatility` returns `(nan, HIGH-NA)` for it. The
+   bound must be `max(K, K·e^{-rT})` for r < 0 (equivalently just
+   `K·e^{-rT}` when r < 0, `K` when r ≥ 0). Not triggered by SPY snapshots
+   (r > 0), so low severity for the report — but it is a real defect in a
+   committed library function. **Fix applied:** `upper = max(K, K·e^{-rT})`
+   for American puts; regression tests
+   (`TestNegativeRatePutBound`) green. A second boundary defect found by
+   the same test — a price exactly at the σ = SIGMA_HI objective got
+   NO-BRACKET from the strict `f_lo < 0 < f_hi` check — also fixed
+   (exact-equality fast path returns σ = SIGMA_HI, reason ok).
+2. **r == q tree-degenerate ValueError — FIXED (2026-11-19, Task 09).**
+   `_american_sigma_floor` now clamps to ≥ SIGMA_LO
+   (implied_vol.py:69); verified inside Task 09's test suite.
+3. **Near-expiry test `0.0 < abs(iv - sigma)` — minor, still open.**
+   tests/test_implied_vol_roundtrip.py:174 requires the round-trip error to
+   be *strictly* positive; an exact recovery (err = 0.0) would fail even
+   though exact recovery is the ideal outcome. Cosmetic only (measured err =
+   2.5e-4 at T = 0.008); fix in Task 12's test pass.
