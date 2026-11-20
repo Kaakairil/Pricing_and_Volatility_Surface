@@ -174,3 +174,29 @@ class TestNearExpiry:
                 assert 0.0 < abs(iv - sigma) < 0.05
             else:
                 assert reason in ("LOW-NA", "HIGH-NA", "NO-BRACKET", "NO-CONV")
+
+
+class TestNegativeRatePutBound:
+    def test_american_put_upper_bound_is_max_K_at_negative_rates(self):
+        # At r < 0 the sigma -> inf limit of an American put is K e^{-rT} > K
+        # (holding the strike gains carry). The dominance bound "never exceeds
+        # K" is wrong there: a legitimate tree price above K was flagged
+        # HIGH-NA. Reproduced: binomial_price(100, 120, 5.0, 3.0, -0.02,
+        # 0.007, put, 500) = 132.53 > K = 120 at sigma = 3.0 = SIGMA_HI.
+        from volsurf.implied_vol import _price_bound
+
+        lo, hi = _price_bound(100.0, 120.0, 5.0, -0.02, 0.007, "put", "american")
+        assert hi == pytest.approx(120.0 * math.exp(0.02 * 5.0), rel=1e-9)
+        # positive rates keep the old dominance bound
+        _, hi_pos = _price_bound(100.0, 120.0, 5.0, 0.02, 0.007, "put", "american")
+        assert hi_pos == 120.0
+
+    def test_negative_rate_put_roundtrips_at_sigma_hi(self):
+        from volsurf.binomial import binomial_price as bp
+
+        p = bp(100.0, 120.0, 5.0, 3.0, -0.02, 0.007, "put", steps=500, american=True)
+        iv, reason = implied_volatility(
+            100.0, 120.0, 5.0, p, -0.02, 0.007, "put", style="american", steps=500
+        )
+        assert reason == "ok"
+        assert iv == pytest.approx(3.0, abs=1e-3)
