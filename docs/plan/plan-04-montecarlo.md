@@ -38,3 +38,8 @@ Tests green.
 6. Binomial-vs-MC agreement — **done** (`TestBinomialCrossCheck`).
 
 All six 2026-11-16 items closed; no round-2 work for this task.
+
+## Gap audit round 3 (2026-11-20) — re-check
+No new gaps. Pair-level antithetic SE, control-variate degeneracy skip,
+`paths >= 2` / even-count contract, and seed-spread regression (30 seeds,
+0.8–1.25) all verified in code. No open items.
