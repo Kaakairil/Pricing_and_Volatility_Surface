@@ -67,3 +67,19 @@ threshold K/S < q/r = 0.177 unreachable — plan note corrected above).
 Outputs: `results/early_exercise_premium.csv` (40 rows),
 `results/rate_sensitivity.csv` (10 rows),
 `results/surface/early_exercise_premium.png`.
+
+## Gap audit round 3 (2026-11-20) — findings in this task's own code
+
+1. **No open bugs.** The premium grid, rate sensitivity, and figure all
+   verified: premium ≥ 0 (machine-precision floor respected), q = 0 →
+   call premium < 1e-6, put premium monotone ↑ in r, no NaN.
+2. **Plan-note correction stands (documented above):** the original "SPY
+   calls have a nonzero premium" claim was wrong at snapshot parameters —
+   the exercise threshold K/S < q/r = 0.177 is unreachable, so the call
+   premium is ≈ 0 to machine precision (3.6e-14 max) and the *put* premium
+   (up to 1.86) is the economically meaningful SPY number. RQ2's "does it
+   match theory?" answer: yes — the premium follows the theory including
+   the honest zero-call case.
+3. **`rate_sensitivity.csv` is plan-invented (justified):** not in the PRD
+   §10 results list, but it is the artifact that evidences §9.2's
+   "premium rises with rate" check. Kept; cited in the report.
