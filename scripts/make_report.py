@@ -6,10 +6,6 @@ except the narrative. Rerun after any pipeline change.
 
 from __future__ import annotations
 
-import statistics
-from collections import Counter
-from pathlib import Path
-
 import pandas as pd
 
 from volsurf.config_io import ROOT
@@ -57,8 +53,8 @@ def rq2_numbers() -> str:
     put_1y = df[(df["option"] == "put") & (df["T"] == 1.0)]
     max_prem = df.loc[df["premium_pct"].idxmax()]
     put_r = rate[rate["option"] == "put"]
-    call_r = rate[rate["option"] == "call"]
-    return f"""### RQ2 — What is the American early-exercise premium worth?
+    return (
+        f"""### RQ2 — What is the American early-exercise premium worth?
 
 Paired American vs European CRR binomial prices (1000 steps, σ = {SIGMA},
 r = {R}, q = {Q} — documented SPY parameters). The premium is the value of
@@ -66,37 +62,50 @@ early exercise.
 
 | Moneyness (K/S) | 1-year put premium ($) | premium % |
 |---|---|---|
-""" + "\n".join(
-        f"| {_fmt(row['moneyness'], 2)} | {_fmt(row['premium'])} | {_fmt(row['premium_pct'] * 100, 2)}% |"
-        for _, row in put_1y.sort_values("moneyness").iterrows()
-    ) + f"""
+"""
+        + "\n".join(
+            f"| {_fmt(row['moneyness'], 2)} | {_fmt(row['premium'])} "
+            f"| {_fmt(row['premium_pct'] * 100, 2)}% |"
+            for _, row in put_1y.sort_values("moneyness").iterrows()
+        )
+        + f"""
 
 Key observations:
 - **Calls at SPY's dividend yield (q = {Q}) are never worth exercising
   early** — the premium is floating-point zero on the whole grid. Early
   exercise is a put phenomenon (or a high-q phenomenon).
 - **Puts**: premium grows with moneyness (deep ITM) and with maturity.
-  Max on this grid: {_fmt(max_prem['premium'])} ({_fmt(max_prem['premium_pct'] * 100, 2)}% of
-  the European value) at K/S = {max_prem['moneyness']}, T = {max_prem['T']}y.
+  Max on this grid: {_fmt(max_prem["premium"])} ({_fmt(max_prem["premium_pct"] * 100, 2)}% of
+  the European value) at K/S = {max_prem["moneyness"]}, T = {max_prem["T"]}y.
 - **Rate sensitivity** (ATM, T = 0.25, r ± 100 bp around {R}): put premium
-  rises with r ({_fmt(put_r['premium'].iloc[0])} → {_fmt(put_r['premium'].iloc[-1])}),
+  rises with r ({_fmt(put_r["premium"].iloc[0])} → {_fmt(put_r["premium"].iloc[-1])}),
   call premium is flat (q > 0 keeps calls alive). Matches PRD §9.2.
 """
+    )
 
 
 def rq3_numbers() -> str:
     iv = _load("iv_table.csv")
     ok = iv[iv["reason"] == "ok"]
     spread = (ok["american"] - ok["european"]).abs()
-    # skew artifact at the longest expiry, from the same CSV
+    # skew at the longest expiry: symmetric |k| window (matched moneyness).
+    # A raw mean-left minus mean-right is biased — this snapshot has 5 puts
+    # (deep k) vs 19 calls (shallow k) at the longest expiry, so the sides
+    # are not comparable at unmatched strikes.
     long_t = ok["tte"].max()
     last = ok[ok["tte"] == long_t]
-    put_left = last[(last["option"] == "put") & (last["k"] < 0)]["american"]
-    call_right = last[(last["option"] == "call") & (last["k"] > 0)]["american"]
-    skew = put_left.mean() - call_right.mean()
+    band = 0.08
+    left = last[(last["k"] <= -0.02) & (last["k"] >= -band)]["american"]
+    right = last[(last["k"] >= 0.02) & (last["k"] <= band)]["american"]
+    skew = left.mean() - right.mean()
+    raw_skew = (
+        last[(last["option"] == "put") & (last["k"] < 0)]["american"].mean()
+        - last[(last["option"] == "call") & (last["k"] > 0)]["american"].mean()
+    )
     svi = _load("svi_fit.csv")
     cal = _load("calendar_diagnostic.csv")
     n_warn = int(cal["warning"].sum())
+    warn_rate = n_warn / len(cal)
     return f"""### RQ3 — What does the SPY volatility surface look like?
 
 From `results/iv_table.csv`: **{len(ok):,} of {len(iv):,} cleaned quotes
@@ -111,19 +120,31 @@ difference is the early-exercise premium expressed in vol terms: puts away
 from ATM show the largest gaps. Figure:
 `results/surface/iv_american_vs_bs.png`.
 
-**Smile and skew:** at the longest expiry ({long_t:.2f}y) the left-wing
-put IV exceeds the right-wing call IV by **{skew:.4f} vol points**
-(PRD §9.3 expects ≈ +0.08; equity-index skew is present but shallower on
-this single snapshot). Figures: `results/surface/smile_*.png`.
+**Smile and skew:** at the longest expiry ({long_t:.2f}y), measured in a
+symmetric |k| ≤ {band} window (matched moneyness on both sides of ATM),
+the left-wing IV exceeds the right-wing IV by **{skew:+.4f} vol points**
+({left.mean():.4f} vs {right.mean():.4f}, n = {len(left)}/{len(right)}).
+A raw mean-left minus mean-right over *all* strikes gives
+{raw_skew:+.4f}, but that compares 5 deep-put quotes against 19
+shallow-call quotes and is not a like-for-like measure. Equity-index skew
+is present but shallower than PRD §9.3's illustrative ≈ +0.08 on this
+single snapshot. Figures: `results/surface/smile_*.png`.
 
 **Term structure:** ATM IV rises with maturity on this snapshot —
-short-dated options price less total variance. Figure:
-`results/surface/term_structure.png`.
+short-dated options price less total variance. The leftmost points of the
+curve can be missing: near the short-T edge the C0 interpolator has no
+grid points inside its convex hull and correctly refuses to extrapolate.
+Figure: `results/surface/term_structure.png`.
 
 **Surface:** C0 `LinearNDInterpolator` over (log-moneyness, maturity),
-{len(_load('iv_surface.csv')):,} grid points, calendar-diagnostic warnings
-on {n_warn} tte-pairs. SVI fits 3 slices with RMSE-in-IV
-{svi['rmse_in_iv'].min():.4f}–{svi['rmse_in_iv'].max():.4f}, all
+{len(_load("iv_surface.csv")):,} grid points. Calendar diagnostic: total
+variance decreases on **{n_warn} of {len(cal):,} adjacent tte-pairs
+({warn_rate * 100:.1f}%)**. The rate, not the raw count, is the honest
+measure: adjacent-strike sampling noise inflates it, and PRD §6.6 frames
+these as model-dependent (American IV is not guaranteed calendar-monotone
+under discrete exercise) rather than as data errors. SVI fits 3 slices
+with RMSE-in-IV
+{svi["rmse_in_iv"].min():.4f}–{svi["rmse_in_iv"].max():.4f}, all
 butterfly-clean (`results/svi_fit.csv`). Figures:
 `results/surface/surface_3d.png`, `results/surface/svi_vs_interpolated.png`.
 """
@@ -139,11 +160,10 @@ def rq4_numbers() -> str:
     spread_cln = int(cln["spread_robust_flags"].sum())
     cr = _load("cleaning_report.csv")
     total_removed = int(cr["removed"].sum())
-    method = _load("surface_method.csv").iloc[0]
     return f"""### RQ4 — How many arbitrage violations does cleaning remove?
 
 Raw snapshot: **{midpoint_raw:,} midpoint violations** across
-{int(raw['tested'].sum()):,} tests; after the PRD §6.5 cleaning rules
+{int(raw["tested"].sum()):,} tests; after the PRD §6.5 cleaning rules
 ({total_removed:,} quote removals, `results/cleaning_report.csv`):
 **{midpoint_cln:,} midpoint violations** — a
 **{100 * (1 - midpoint_cln / midpoint_raw):.0f}% reduction.**
@@ -165,7 +185,7 @@ Flag counts by check:
     )
 
 
-LIMITATIONS = """
+LIMITATIONS = f"""
 ## Limitations
 
 1. **Free, possibly delayed data.** yfinance quotes are 15-min-delayed
@@ -173,7 +193,7 @@ LIMITATIONS = """
 2. **Single snapshot.** One day (2026-11-16) — no claims about how the
    surface moves over time.
 3. **Continuous dividend approximation.** A trailing-12m continuous yield
-   q = {q} approximates discrete quarterly dividends; short-dated puts
+   q = {Q} approximates discrete quarterly dividends; short-dated puts
    are the most affected.
 4. **C0 linear interpolation.** The surface is piecewise-linear in
    (log-moneyness, T); it is not differentiable, so smooth-model tools
@@ -184,7 +204,7 @@ LIMITATIONS = """
    perturbs r; it does not fit a curve.
 7. **American IV uses a 100-step tree.** Trunk precision ~1e-3 in price,
    which propagates to IV as a small positive bias on long-dated puts.
-""".format(q=Q)
+"""
 
 
 def main() -> None:
@@ -194,11 +214,11 @@ def main() -> None:
     )
     report = f"""# SPY Volatility Surface — Results Report
 
-**Snapshot:** SPY {meta['snapshot_date']}, spot {meta['spot']},
-{meta['row_counts']['total']:,} raw quotes ({meta['row_counts']['calls']:,} calls /
-{meta['row_counts']['puts']:,} puts), {meta['row_counts']['expiries']} expiries.
-**Rate:** {meta['rate_source']} = {meta['rate_value']:.4f}.
-**Dividend yield:** {meta['dividend_yield']:.4f} ({meta['dividend_method']}).
+**Snapshot:** SPY {meta["snapshot_date"]}, spot {meta["spot"]},
+{meta["row_counts"]["total"]:,} raw quotes ({meta["row_counts"]["calls"]:,} calls /
+{meta["row_counts"]["puts"]:,} puts), {meta["row_counts"]["expiries"]} expiries.
+**Rate:** {meta["rate_source"]} = {meta["rate_value"]:.4f}.
+**Dividend yield:** {meta["dividend_yield"]:.4f} ({meta["dividend_method"]}).
 
 ## Research questions
 
