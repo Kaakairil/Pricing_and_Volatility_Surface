@@ -62,18 +62,30 @@ difference is the early-exercise premium expressed in vol terms: puts away
 from ATM show the largest gaps. Figure:
 `results/surface/iv_american_vs_bs.png`.
 
-**Smile and skew:** at the longest expiry (2.18y) the left-wing
-put IV exceeds the right-wing call IV by **0.0331 vol points**
-(PRD §9.3 expects ≈ +0.08; equity-index skew is present but shallower on
-this single snapshot). Figures: `results/surface/smile_*.png`.
+**Smile and skew:** at the longest expiry (2.18y), measured in a
+symmetric |k| ≤ 0.08 window (matched moneyness on both sides of ATM),
+the left-wing IV exceeds the right-wing IV by **+0.0166 vol points**
+(0.1989 vs 0.1823, n = 6/9).
+A raw mean-left minus mean-right over *all* strikes gives
++0.0331, but that compares 5 deep-put quotes against 19
+shallow-call quotes and is not a like-for-like measure. Equity-index skew
+is present but shallower than PRD §9.3's illustrative ≈ +0.08 on this
+single snapshot. Figures: `results/surface/smile_*.png`.
 
 **Term structure:** ATM IV rises with maturity on this snapshot —
-short-dated options price less total variance. Figure:
-`results/surface/term_structure.png`.
+short-dated options price less total variance. The leftmost points of the
+curve can be missing: near the short-T edge the C0 interpolator has no
+grid points inside its convex hull and correctly refuses to extrapolate.
+Figure: `results/surface/term_structure.png`.
 
 **Surface:** C0 `LinearNDInterpolator` over (log-moneyness, maturity),
-861 grid points, calendar-diagnostic warnings
-on 712 tte-pairs. SVI fits 3 slices with RMSE-in-IV
+861 grid points. Calendar diagnostic: total
+variance decreases on **712 of 3,108 adjacent tte-pairs
+(22.9%)**. The rate, not the raw count, is the honest
+measure: adjacent-strike sampling noise inflates it, and PRD §6.6 frames
+these as model-dependent (American IV is not guaranteed calendar-monotone
+under discrete exercise) rather than as data errors. SVI fits 3 slices
+with RMSE-in-IV
 0.0038–0.0078, all
 butterfly-clean (`results/svi_fit.csv`). Figures:
 `results/surface/surface_3d.png`, `results/surface/svi_vs_interpolated.png`.
