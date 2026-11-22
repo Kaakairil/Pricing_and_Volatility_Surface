@@ -171,7 +171,7 @@ class TestNearExpiry:
             price = binomial_price(S, K, T, sigma, r, q, option, steps=200, american=True)
             iv, reason = implied_volatility(S, K, T, price, r, q, option, style=style, steps=200)
             if reason == "ok":
-                assert 0.0 < abs(iv - sigma) < 0.05
+                assert abs(iv - sigma) < 0.05  # exact recovery (err == 0) is ideal, not a failure
             else:
                 assert reason in ("LOW-NA", "HIGH-NA", "NO-BRACKET", "NO-CONV")
 
