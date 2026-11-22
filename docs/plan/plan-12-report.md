@@ -35,8 +35,8 @@ Found in the plans 1–11 re-check; status after same-day fixes:
    σ = SIGMA_HI exact-price NO-BRACKET boundary defect the fix exposed).
 4. ~~`get_cleaning_rules` ROOT default~~ — FIXED 2026-11-20 (default now
    `ROOT / "config"`; YAML actually read).
-5. **Near-expiry `0.0 < abs(iv - sigma)`** (plan-05 round 3, item 3) — allow
-   exact recovery in the test pass.
+5. ~~Near-expiry `0.0 < abs(iv - sigma)`~~ — FIXED 2026-11-23
+   (exact recovery allowed; 39 roundtrip tests green).
 6. **Missing deliverables this task already owns:** `scripts/run_pipeline.py`
    (Makefile `all`), `scripts/make_figures.py`, `scripts/make_report.py`,
    `report/report.md`, `report/summary.md`, `tests/test_reproducibility.py`,
