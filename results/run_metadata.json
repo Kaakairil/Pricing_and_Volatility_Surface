@@ -1,0 +1,16 @@
+{
+  "clean_clone_test": {
+    "date_utc": "2026-11-22T05:57:25.637597+00:00",
+    "python": "3.12.6 (tags/v3.12.6:a4a2d2b, Sep  6 2024, 20:11:23) [MSC v.1940 64 bit (AMD64)]",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "clone_head": "196551460cd92c8412681b068f2b0979605eb6de",
+    "steps": [
+      "git clone -> empty dir",
+      "python -m venv .venv; pip install -e .[dev] -c constraints.txt",
+      "python scripts/run_pipeline.py  (make all equivalent; no make on host)",
+      "python -m pytest -m \"not network\"  (make test equivalent)"
+    ],
+    "result": "PASS - pipeline completed, 1315 passed, 1 deselected",
+    "suite_seconds": 351.86
+  }
+}
