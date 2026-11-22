@@ -25,20 +25,19 @@ Deterministic repeat verified (byte-identical `iv_table.csv`).
 
 ## Gap audit round 3 (2026-11-20) — findings in this task's own code
 
-1. **`plot_term_structure` reads the grid, not IVs (cosmetic, open).** The
-   term-structure figure interpolates IV at k = 0 from the fitted grid; grid
-   points near the short-T edge are often NaN (out-of-hull), so the leftmost
-   part of the curve can be missing. Acceptable — never extrapolates — but
-   worth a sentence in the report when presenting it.
-2. **RQ3 skew is reported only implicitly (open → Task 12).** PRD §9.3 asks
-   the report to state the observed skew (IV difference between low and
-   high strikes at a fixed expiry). No artifact computes it; from the
-   committed table it is ≈ +0.08 IV (0.244 left vs 0.158 right at the
-   longest expiry). Task 12's report should compute and cite it — no new
-   module needed, a line in `report/report.md`.
-3. **Calendar warnings are numerous (712 / 3,108).** Consistent with the
-   §6.6 model-dependent framing; the report must present the *rate*, not
-   the raw count, and remind that adjacent-strike noise inflates it.
+1. **`plot_term_structure` reads the grid, not IVs — CLOSED (2026-11-23).**
+   The report now carries the sentence: near the short-T edge the C0
+   interpolator has no grid points inside its convex hull and correctly
+   refuses to extrapolate (report/report.md RQ3).
+2. **RQ3 skew — CLOSED (2026-11-23).** report.md RQ3 now computes the skew
+   from `results/iv_table.csv` in a symmetric |k| ≤ 0.08 window at the
+   longest expiry: **+0.0166 vol points** (0.1989 left vs 0.1823 right).
+   The earlier ≈ +0.08 estimate came from unmatched means (5 deep puts vs
+   19 shallow calls = +0.0331) — not like-for-like; the report states both
+   and why the matched window is the honest measure.
+3. **Calendar warnings — CLOSED (2026-11-23).** Report RQ3 now presents
+   the rate: 712 of 3,108 adjacent tte-pairs (22.9%), with the §6.6
+   model-dependent framing and the adjacent-strike-noise caveat.
 
 ## Original brief (kept for reference)
 
