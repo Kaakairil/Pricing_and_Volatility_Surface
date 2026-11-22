@@ -1,0 +1,23 @@
+{
+  "dividend_method": "trailing_12m",
+  "dividend_yield": 0.008174554393176055,
+  "fetch_time_utc": "2026-11-22T06:08:41.933927+00:00",
+  "package_versions": {
+    "volsurf": "0.1.0",
+    "yfinance": "1.8.0"
+  },
+  "rate_source": "FRED DTB3 2026-11-19",
+  "rate_tenor_days": 91,
+  "rate_value": 0.0424011061548201,
+  "row_counts": {
+    "calls": 5548,
+    "expiries": 30,
+    "puts": 4712,
+    "total": 10260
+  },
+  "snapshot_date": "2026-11-22",
+  "spot": 689.81,
+  "spot_source": "yfinance regularMarketPrice at fetch_time_utc (no quote timestamp exposed)",
+  "ticker": "SPY",
+  "trailing_12m_dividends": 5.662
+}

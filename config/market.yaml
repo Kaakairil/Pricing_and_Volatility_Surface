@@ -1,12 +1,12 @@
 ticker: SPY
-snapshot_date: '2026-11-16'
-fetch_time_utc: '2026-11-16T14:27:41.987208+00:00'
+snapshot_date: '2026-11-22'
+fetch_time_utc: '2026-11-22T06:08:41.933927+00:00'
 rate_series: DTB3
 rate_tenor_days: 91
-rate_value: 0.04219617863034214
-rate_source: FRED DTB3 2026-11-12
+rate_value: 0.0424011061548201
+rate_source: FRED DTB3 2026-11-19
 dividend_method: trailing_12m
-dividend_yield: 0.007477573830616421
+dividend_yield: 0.008174554393176055
 rate_sensitivity_bp:
 - -100
 - 100
