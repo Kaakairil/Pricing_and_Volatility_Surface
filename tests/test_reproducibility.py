@@ -75,9 +75,13 @@ def _run_pipeline(out_dir: Path) -> dict[str, str]:
     american = compute_iv_table(cleaned, spot, r, q, style="american", steps=100)
     european = compute_iv_table(cleaned, spot, r, q, style="european")
     key = ["strike", "tte", "option"]
-    iv_table = american.merge(
-        european[key + ["iv"]].rename(columns={"iv": "european"}), on=key, how="left"
-    ).rename(columns={"iv": "american"}).assign(iv=lambda d: d["american"])
+    iv_table = (
+        american.merge(
+            european[key + ["iv"]].rename(columns={"iv": "european"}), on=key, how="left"
+        )
+        .rename(columns={"iv": "american"})
+        .assign(iv=lambda d: d["american"])
+    )
     iv_table.to_csv(out_dir / "iv_table.csv", index=False)
 
     surface_in = iv_table[["k", "tte", "american"]].rename(columns={"american": "iv"})
@@ -89,8 +93,13 @@ def _run_pipeline(out_dir: Path) -> dict[str, str]:
     calendar_diagnostic(surface_in).to_csv(out_dir / "calendar_diagnostic.csv", index=False)
 
     premium = early_exercise_premium(
-        spot, [0.8, 0.9, 1.0, 1.1, 1.2], [1 / 52, 1 / 12, 0.25, 1.0],
-        0.20, r, q, steps=1000,
+        spot,
+        [0.8, 0.9, 1.0, 1.1, 1.2],
+        [1 / 52, 1 / 12, 0.25, 1.0],
+        0.20,
+        r,
+        q,
+        steps=1000,
     )
     premium.to_csv(out_dir / "early_exercise_premium.csv", index=False)
     rates = rate_sensitivity(
