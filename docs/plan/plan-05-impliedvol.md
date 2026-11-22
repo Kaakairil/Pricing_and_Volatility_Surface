@@ -70,8 +70,7 @@ Round-trip tests green; reason codes tested.
 2. **r == q tree-degenerate ValueError — FIXED (2026-11-19, Task 09).**
    `_american_sigma_floor` now clamps to ≥ SIGMA_LO
    (implied_vol.py:69); verified inside Task 09's test suite.
-3. **Near-expiry test `0.0 < abs(iv - sigma)` — minor, still open.**
-   tests/test_implied_vol_roundtrip.py:174 requires the round-trip error to
-   be *strictly* positive; an exact recovery (err = 0.0) would fail even
-   though exact recovery is the ideal outcome. Cosmetic only (measured err =
-   2.5e-4 at T = 0.008); fix in Task 12's test pass.
+3. **Near-expiry test `0.0 < abs(iv - sigma)` — FIXED (2026-11-23).**
+   The strict-positivity assertion now allows exact recovery
+   (`abs(iv - sigma) < 0.05`); exact recovery is the ideal outcome, not a
+   failure. 39 roundtrip tests green.
