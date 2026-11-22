@@ -1,0 +1,5 @@
+VRP (VIX - next-21d realized vol), non-overlapping windows
+n=106 windows
+mean gap=0.0375 vol points
+95% block-bootstrap CI [0.0203, 0.0535]
+positive in 82% of windows
