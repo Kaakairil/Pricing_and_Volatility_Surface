@@ -1,6 +1,6 @@
 ticker: SPY
-snapshot_date: '2026-11-22'
-fetch_time_utc: '2026-11-22T06:08:41.933927+00:00'
+snapshot_date: '2026-11-23'
+fetch_time_utc: '2026-11-23T08:45:16.863714+00:00'
 rate_series: DTB3
 rate_tenor_days: 91
 rate_value: 0.0424011061548201
