@@ -1,0 +1,7 @@
+# Byte-identical checksums and reproducibility tests require these files to
+# have LF line endings on every platform: the .sha256 sidecars hash the CSV
+# bytes, so a CRLF checkout would break load_snapshot verification.
+data/snapshots/*.csv text eol=lf
+data/snapshots/*.sha256 text eol=lf
+data/snapshots/*.metadata.json text eol=lf
+results/*.csv text eol=lf
