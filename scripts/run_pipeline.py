@@ -47,14 +47,17 @@ def main() -> None:
     # 1. clean
     cleaned, _ = clean(df, spot, rules=get_cleaning_rules(ROOT / "config"), snapshot_date=date)
     cleaned = cleaned.dropna(subset=["mid", "tte"])
-    cleaned.to_csv(RESULTS / f"cleaned_{date}.csv", index=False)
+    cleaned.to_csv(RESULTS / f"cleaned_{date}.csv", index=False, lineterminator="\n")
 
     # 2. arbitrage raw vs cleaned
     keys = ("spot", "rate_value", "dividend_yield", "snapshot_date")
     raw_report = run_checks(df, *(meta[k] for k in keys))
     cleaned_report = run_checks(cleaned, *(meta[k] for k in keys))
     pd.concat([raw_report.assign(stage="raw"), cleaned_report.assign(stage="cleaned")]).to_csv(
-        RESULTS / "arbitrage_report.csv", index=False, columns=["stage", *raw_report.columns]
+        RESULTS / "arbitrage_report.csv",
+        index=False,
+        columns=["stage", *raw_report.columns],
+        lineterminator="\n",
     )
 
     # 3. IV table + surface
@@ -65,21 +68,23 @@ def main() -> None:
         european[key + ["iv"]].rename(columns={"iv": "european"}), on=key, how="left"
     ).rename(columns={"iv": "american"})
     iv_table = iv_table.assign(iv=iv_table["american"])
-    iv_table.to_csv(RESULTS / "iv_table.csv", index=False)
+    iv_table.to_csv(RESULTS / "iv_table.csv", index=False, lineterminator="\n")
 
     surface_in = iv_table[["k", "tte", "american"]].rename(columns={"american": "iv"})
     grid, method = build_surface(surface_in)
-    grid.to_csv(RESULTS / "iv_surface.csv", index=False)
+    grid.to_csv(RESULTS / "iv_surface.csv", index=False, lineterminator="\n")
     pd.DataFrame([{k: v for k, v in method.items() if k != "interpolator"}]).to_csv(
-        RESULTS / "surface_method.csv", index=False
+        RESULTS / "surface_method.csv", index=False, lineterminator="\n"
     )
-    calendar_diagnostic(surface_in).to_csv(RESULTS / "calendar_diagnostic.csv", index=False)
+    calendar_diagnostic(surface_in).to_csv(
+        RESULTS / "calendar_diagnostic.csv", index=False, lineterminator="\n"
+    )
 
     # 4. experiments (RQ2): early-exercise premium + rate sensitivity
     premium = early_exercise_premium(spot, MONEYNESS, T_GRID, SIGMA, R, Q, steps=1000)
-    premium.to_csv(RESULTS / "early_exercise_premium.csv", index=False)
+    premium.to_csv(RESULTS / "early_exercise_premium.csv", index=False, lineterminator="\n")
     rates = rate_sensitivity(spot, 1.0, 0.25, SIGMA, R_GRID, Q, steps=1000)
-    rates.to_csv(RESULTS / "rate_sensitivity.csv", index=False)
+    rates.to_csv(RESULTS / "rate_sensitivity.csv", index=False, lineterminator="\n")
 
     # 5. figures
     plot_smiles(iv_table, FIG_DIR)
