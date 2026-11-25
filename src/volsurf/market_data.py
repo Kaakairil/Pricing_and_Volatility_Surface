@@ -84,7 +84,7 @@ def save_snapshot(options_df: DataFrame, meta: dict, out_dir) -> Path:
     date = snapshot_date or "none"
     name = f"spy_{date}"
     csv_path = out_dir / f"{name}.csv"
-    options_df.to_csv(csv_path, index=False)
+    options_df.to_csv(csv_path, index=False, lineterminator="\n")
 
     meta_path = csv_path.with_suffix(".metadata.json")
     meta_path.write_text(json.dumps(meta, indent=2, sort_keys=True), encoding="utf-8")
